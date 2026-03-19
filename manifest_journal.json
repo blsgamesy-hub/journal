@@ -1,0 +1,22 @@
+{
+  "name": "나 발견 일지",
+  "short_name": "발견일지",
+  "description": "나를 관찰하고 기록하는 공간",
+  "start_url": "./journal.html",
+  "display": "standalone",
+  "background_color": "#f5f2ed",
+  "theme_color": "#f5f2ed",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./journal_icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./journal_icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
