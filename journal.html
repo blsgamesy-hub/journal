@@ -270,14 +270,13 @@ body {
 /* 필드 표시 */
 .detail-fields { margin-bottom: 20px; }
 .dfield {
-  display: flex; gap: 12px; padding: 10px 0;
+  padding: 10px 0;
   border-bottom: 1px dashed var(--line);
-  align-items: flex-start;
 }
 .dfield:last-child { border-bottom: none; }
-.dfield-label { font-size: 11px; color: var(--ink-light); width: 64px; flex-shrink: 0; padding-top: 2px; }
-.dfield-val { font-size: 14px; color: var(--ink); line-height: 1.6; flex: 1; white-space: pre-wrap; }
-.dfield-val.empty { color: var(--ink-faint); font-size: 13px; }
+.dfield-label { font-size: 11px; color: var(--ink-light); display: block; margin-bottom: 3px; }
+.dfield-val { font-size: 14px; color: var(--ink); line-height: 1.6; white-space: pre-wrap; display: block; }
+.dfield-val.empty { color: var(--ink-faint); font-size: 13px; white-space: normal; }
 
 .detail-actions {
   display: flex; gap: 8px; justify-content: flex-end;
@@ -331,15 +330,6 @@ body {
 }
 .comment-date { font-size: 11px; color: var(--ink-faint); margin-bottom: 5px; }
 .comment-body { font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
-.comment-del {
-  position: absolute; top: 12px; right: 0;
-  background: none; border: none;
-  font-size: 12px; color: var(--ink-faint);
-  cursor: pointer; opacity: 0; transition: opacity .15s;
-}
-.comment-item:hover .comment-del { opacity: 1; }
-.comment-del:hover { color: #b05050; }
-
 .comment-form { margin-top: 16px; display: flex; flex-direction: column; }
 .comment-textarea {
   width: 100%; background: transparent;
@@ -368,6 +358,62 @@ body {
 .retry-overlay.open { display: flex; }
 
 .hidden { display: none; }
+
+/* 시도 스왑 버튼 */
+.try-swap-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: 1px solid var(--line);
+  border-radius: 8px; padding: 4px 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11px; color: var(--ink-light);
+  cursor: pointer; margin-bottom: 16px;
+  transition: all .15s;
+}
+.try-swap-btn:hover { border-color: var(--c-try); color: var(--c-try); }
+
+/* 덧붙이기 수정 */
+.comment-actions {
+  position: absolute; top: 12px; right: 0;
+  display: flex; gap: 8px; align-items: center;
+  opacity: 0; transition: opacity .15s;
+}
+.comment-item:hover .comment-actions { opacity: 1; }
+.comment-edit-btn {
+  background: none; border: none;
+  font-size: 12px; color: var(--ink-faint);
+  cursor: pointer; padding: 0; line-height: 1;
+}
+.comment-edit-btn:hover { color: var(--ink-light); }
+.comment-del {
+  background: none; border: none;
+  font-size: 12px; color: var(--ink-faint);
+  cursor: pointer; padding: 0;
+}
+.comment-del:hover { color: #b05050; }
+.comment-editing-form {
+  margin-top: 8px;
+}
+.comment-editing-textarea {
+  width: 100%; background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px; color: var(--ink); outline: none;
+  resize: none; min-height: 56px; line-height: 1.7;
+}
+.comment-editing-textarea:focus { border-color: var(--ink-faint); }
+.comment-edit-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
+.comment-edit-save {
+  background: var(--ink); color: #fff;
+  border: none; border-radius: 7px; padding: 5px 14px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px; cursor: pointer;
+}
+.comment-edit-cancel {
+  background: none; border: 1px solid var(--line);
+  border-radius: 7px; padding: 5px 14px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px; color: var(--ink-light); cursor: pointer;
+}
 
 /* 별 */
 .star-btn {
@@ -520,6 +566,39 @@ body {
   font-size: 10px; font-weight: 500;
 }
 
+/* 토스트 */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fff;
+  padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; z-index: 9999;
+  opacity: 0; transition: opacity .2s;
+  pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* 삭제 확인 바 */
+.confirm-bar {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--paper); border-top: 1px solid var(--line);
+  padding: 16px 24px; z-index: 9999;
+  flex-direction: column; align-items: center; gap: 12px;
+}
+.confirm-bar.show { display: flex; }
+.confirm-bar-msg { font-size: 14px; color: var(--ink); }
+.confirm-bar-btns { display: flex; gap: 10px; }
+.confirm-yes {
+  background: #b05050; color: #fff; border: none;
+  border-radius: 8px; padding: 9px 24px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px; cursor: pointer;
+}
+.confirm-no {
+  background: none; border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 24px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px; color: var(--ink-light); cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -553,6 +632,7 @@ body {
   <div class="tab t-find" data-tab="find">패턴 발견</div>
   <div class="tab t-obs"  data-tab="obs">관찰</div>
   <div class="tab t-try"  data-tab="try">시도</div>
+  <div class="tab" data-tab="starred">⭐</div>
 </div>
 
 
@@ -587,7 +667,7 @@ body {
     <div id="fields-find">
       <div class="field-group">
         <div class="field-label">대상</div>
-        <input class="field-input" id="find-subject" placeholder="나는 / 나의 친구는 ..." />
+        <input class="field-input" id="find-subject" placeholder="나는 / 나의 친구는 ..." value="나는" />
       </div>
       <div class="field-group">
         <div class="field-label">조건</div>
@@ -612,7 +692,7 @@ body {
     <div id="fields-obs" class="hidden">
       <div class="field-group">
         <div class="field-label">관찰 대상</div>
-        <input class="field-input" id="obs-subject" placeholder="나 / 사람들 / 나의 식습관 ..." />
+        <input class="field-input" id="obs-subject" placeholder="나는 / 사람들 / 나의 식습관 ..." value="나는" />
       </div>
       <div class="field-group">
         <div class="field-label">관찰 조건</div>
@@ -639,17 +719,21 @@ body {
         <div class="field-label">조건</div>
         <input class="field-input" id="try-condition" placeholder="돈 얘기가 나올 때 ..." />
       </div>
-      <div class="field-group">
-        <div class="field-label">조건 수정</div>
-        <input class="field-input" id="try-mod" placeholder="잠깐 멈추고 숨을 쉬면 ..." />
-      </div>
-      <div class="field-group">
-        <div class="field-label">기대 행동</div>
-        <input class="field-input" id="try-expected" placeholder="덜 무기력해질까? ..." />
+      <button class="try-swap-btn" id="try-swap-btn" type="button">⇅ <span id="try-swap-label">기대 행동 → 조건 수정</span></button>
+      <div id="try-field-mid">
+        <!-- 순서 A: 조건수정 → 기대행동 / 순서 B: 기대행동 → 조건수정 -->
       </div>
       <div class="field-group">
         <div class="field-label">결과 <span class="field-opt">선택</span></div>
         <textarea class="field-textarea" id="try-result" placeholder="시도 후 채워요..."></textarea>
+      </div>
+      <div class="field-group">
+        <div class="field-label">태그 <span class="field-opt">전체 공유</span></div>
+        <div class="tag-pool" id="try-tag-pool"></div>
+        <div class="tag-add-row">
+          <input class="tag-add-input" id="try-tag-add-input" placeholder="새 태그 입력..." />
+          <button class="tag-add-btn" id="try-tag-add-btn">+ 추가</button>
+        </div>
       </div>
     </div>
 
@@ -701,6 +785,15 @@ body {
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+<div class="confirm-bar" id="confirm-bar">
+  <div class="confirm-bar-msg">이 기록을 삭제할까요?</div>
+  <div class="confirm-bar-btns">
+    <button class="confirm-no" id="confirm-no">취소</button>
+    <button class="confirm-yes" id="confirm-yes">삭제</button>
+  </div>
+</div>
+
 <script>
 (function(){
   var entries = [];
@@ -711,14 +804,34 @@ body {
   var selectedType = 'find';
   var tagPool = ['행복함','무기력','불안','설렘','뿌듯함','짜증','평온','두려움'];
   var selectedTags = [];
+  var selectedTryTags = [];
   var filterTag = null;
   var searchQuery = '';
   var resultBlocks = [{id:0, text:'', rtype:'기분'}];
   var obsResultBlocks = [{id:0, text:'', rtype:'기분'}];
   var rbCounter = 1;
   var RTYPES = ['기분','감정','행동','생각','신체반응','상황'];
+  var tryFieldOrder = 'A'; // A: 조건수정→기대행동, B: 기대행동→조건수정
 
   function pad(n){ return n < 10 ? '0'+n : ''+n; }
+
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2000);
+  }
+
+  function showConfirm(onYes){
+    var bar = document.getElementById('confirm-bar');
+    bar.classList.add('show');
+    document.getElementById('confirm-yes').onclick = function(){
+      bar.classList.remove('show');
+      onYes();
+    };
+    document.getElementById('confirm-no').onclick = function(){
+      bar.classList.remove('show');
+    };
+  }
   function fmt(ts){
     var d = new Date(ts);
     return d.getFullYear()+'년 '+pad(d.getMonth()+1)+'월 '+pad(d.getDate())+'일 '+pad(d.getHours())+':'+pad(d.getMinutes());
@@ -743,20 +856,56 @@ body {
       return (part1+part2).trim();
     }
     if(type === 'try'){
-      var c = data.condition||'', e = data.expected||'';
-      if(!c && !e) return '';
+      var c = data.condition||'', e = data.expected||'', m = data.mod||'';
+      if(!c && !e && !m) return '';
       var co = c ? c+'일 때' : '';
-      var ex = e ? ' '+e+'하기 시도' : ' 시도';
-      return (co+ex).trim();
+      var order = data.fieldOrder || 'A';
+      var mid1 = order==='B' ? (e ? ' '+e+'하기' : '') : (m ? ' '+m+'로' : '');
+      var mid2 = order==='B' ? (m ? ' '+m+'로' : '') : (e ? ' '+e+'하기' : '');
+      return (co+mid1+mid2+' 시도').trim();
     }
     return '';
   }
 
   // 실시간 제목 미리보기
+  function renderTryMidFields(){
+    var wrap = document.getElementById('try-field-mid');
+    if(!wrap) return;
+    var modVal = document.getElementById('try-mod') ? document.getElementById('try-mod').value : '';
+    var expVal = document.getElementById('try-expected') ? document.getElementById('try-expected').value : '';
+    if(tryFieldOrder==='A'){
+      wrap.innerHTML =
+        '<div class="field-group"><div class="field-label">조건 수정</div>'+
+        '<input class="field-input" id="try-mod" placeholder="잠깐 멈추고 숨을 쉬면 ..." value="'+modVal.replace(/"/g,'&quot;')+'"/></div>'+
+        '<div class="field-group"><div class="field-label">기대 행동</div>'+
+        '<input class="field-input" id="try-expected" placeholder="덜 무기력해질까? ..." value="'+expVal.replace(/"/g,'&quot;')+'"/></div>';
+      document.getElementById('try-swap-label').textContent = '기대 행동 → 조건 수정';
+    } else {
+      wrap.innerHTML =
+        '<div class="field-group"><div class="field-label">기대 행동</div>'+
+        '<input class="field-input" id="try-expected" placeholder="덜 무기력해질까? ..." value="'+expVal.replace(/"/g,'&quot;')+'"/></div>'+
+        '<div class="field-group"><div class="field-label">조건 수정</div>'+
+        '<input class="field-input" id="try-mod" placeholder="잠깐 멈추고 숨을 쉬면 ..." value="'+modVal.replace(/"/g,'&quot;')+'"/></div>';
+      document.getElementById('try-swap-label').textContent = '조건 수정 → 기대 행동';
+    }
+    // 재바인딩
+    var reInputs = ['try-mod','try-expected'];
+    reInputs.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.addEventListener('input', updatePreview);
+    });
+  }
+
+  document.getElementById('try-swap-btn').addEventListener('click', function(){
+    tryFieldOrder = tryFieldOrder==='A' ? 'B' : 'A';
+    renderTryMidFields();
+    updatePreview();
+  });
+
   function bindPreview(){
     var inputs = ['find-subject','find-condition','find-behavior',
                   'obs-subject','obs-behavior','obs-condition',
-                  'try-condition','try-mod','try-expected'];
+                  'try-condition'];
     inputs.forEach(function(id){
       var el = document.getElementById(id);
       if(el) el.addEventListener('input', updatePreview);
@@ -781,12 +930,13 @@ body {
       ].filter(Boolean);
       title = parts.join(' ');
     } else if(selectedType==='try'){
-      var parts = [
-        document.getElementById('try-condition').value.trim(),
-        document.getElementById('try-mod').value.trim(),
-        document.getElementById('try-expected').value.trim()
-      ].filter(Boolean);
-      title = parts.join(' ');
+      var cond = document.getElementById('try-condition').value.trim();
+      var mod = document.getElementById('try-mod') ? document.getElementById('try-mod').value.trim() : '';
+      var exp = document.getElementById('try-expected') ? document.getElementById('try-expected').value.trim() : '';
+      var parts = [cond];
+      if(tryFieldOrder==='B'){ parts.push(exp); parts.push(mod); }
+      else { parts.push(mod); parts.push(exp); }
+      title = parts.filter(Boolean).join(' ');
     }
     var titleEl = document.getElementById('form-title');
     if(titleEl && title) titleEl.value = title;
@@ -986,15 +1136,34 @@ body {
     });
   }
 
+  function renderTryTagPool(){
+    var pool = document.getElementById('try-tag-pool');
+    if(!pool) return;
+    var html = '';
+    tagPool.forEach(function(tag){
+      var sel = selectedTryTags.indexOf(tag) >= 0;
+      html += '<div class="tag-chip'+(sel?' sel':'')+'" data-tag="'+tag+'">'+tag+'</div>';
+    });
+    pool.innerHTML = html;
+    pool.querySelectorAll('.tag-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        var tag = this.getAttribute('data-tag');
+        var idx = selectedTryTags.indexOf(tag);
+        if(idx >= 0) selectedTryTags.splice(idx, 1);
+        else selectedTryTags.push(tag);
+        renderTryTagPool();
+      });
+    });
+  }
+
 
 
   function renderTagFilter(){
     var wrap = document.getElementById('tag-filter-wrap');
     if(!wrap) return;
-    if(currentTab !== 'find'){ wrap.innerHTML=''; return; }
-    // 현재 find 엔트리에서 태그 수집
+    if(currentTab !== 'find' && currentTab !== 'try'){ wrap.innerHTML=''; return; }
     var allTags = {};
-    entries.filter(function(e){ return e.type==='find'; }).forEach(function(e){
+    entries.filter(function(e){ return e.type===currentTab; }).forEach(function(e){
       (e.data.tags||[]).forEach(function(t){ allTags[t] = (allTags[t]||0)+1; });
     });
     var tags = Object.keys(allTags);
@@ -1020,7 +1189,7 @@ body {
     renderList();
   });
 
-  // 태그 추가
+  // 태그 추가 (find)
   document.getElementById('tag-add-btn').addEventListener('click', addTag);
   document.getElementById('tag-add-input').addEventListener('keydown', function(e){ if(e.key==='Enter') addTag(); });
   function addTag(){
@@ -1029,6 +1198,20 @@ body {
     if(tagPool.indexOf(val) < 0) tagPool.push(val);
     if(selectedTags.indexOf(val) < 0) selectedTags.push(val);
     inp.value = '';
+    renderFormTagPool();
+    autoSave();
+  }
+
+  // 태그 추가 (try)
+  document.getElementById('try-tag-add-btn').addEventListener('click', addTryTag);
+  document.getElementById('try-tag-add-input').addEventListener('keydown', function(e){ if(e.key==='Enter') addTryTag(); });
+  function addTryTag(){
+    var inp = document.getElementById('try-tag-add-input');
+    var val = inp.value.trim(); if(!val) return;
+    if(tagPool.indexOf(val) < 0) tagPool.push(val);
+    if(selectedTryTags.indexOf(val) < 0) selectedTryTags.push(val);
+    inp.value = '';
+    renderTryTagPool();
     renderFormTagPool();
     autoSave();
   }
@@ -1043,11 +1226,24 @@ body {
     });
   });
 
+  // 탭에 따라 작성하기 버튼 타입 연동
+  document.getElementById('write-btn').addEventListener('click', function(){
+    var type = (currentTab==='find'||currentTab==='obs'||currentTab==='try') ? currentTab : 'find';
+    openWriteSheet(null, type);
+  });
+
   // ── 리스트 ──
   function renderList(){
     var wrap = document.getElementById('list-wrap');
     renderTagFilter();
-    var filtered = currentTab === 'all' ? entries : entries.filter(function(e){ return e.type === currentTab; });
+    var filtered;
+    if(currentTab==='starred'){
+      filtered = entries.filter(function(e){ return e.starred || (e.retries||[]).some(function(r){ return r.starred; }); });
+    } else if(currentTab === 'all'){
+      filtered = entries;
+    } else {
+      filtered = entries.filter(function(e){ return e.type === currentTab; });
+    }
     // 태그 필터
     if(filterTag){
       filtered = filtered.filter(function(e){ return (e.data.tags||[]).indexOf(filterTag)>=0; });
@@ -1062,7 +1258,7 @@ body {
       });
     }
     if(filtered.length === 0){
-      wrap.innerHTML = '<div class="empty">기록이 없어요 🌿</div>';
+      wrap.innerHTML = '<div class="empty">'+(currentTab==='starred'?'별표한 기록이 없어요 ⭐':'기록이 없어요 🌿')+'</div>';
       return;
     }
     var html = '';
@@ -1074,7 +1270,7 @@ body {
       var tags = (e.data.tags||[]);
       var tagsHtml = tags.length>0 ? '<div class="card-tags">'+tags.map(function(t){ return '<span class="card-tag">'+esc(t)+'</span>'; }).join('')+'</div>' : '';
       var hasStarHtml = '';
-      if(e.type==='try'){
+      if(e.type==='try'||e.type==='find'||e.type==='obs'){
         var hasStar = e.starred || (e.retries||[]).some(function(r){ return r.starred; });
         if(hasStar) hasStarHtml = '<div style="position:absolute;top:8px;left:8px;font-size:20px;line-height:1;">⭐</div>';
       }
@@ -1126,7 +1322,7 @@ body {
     else { retryBtn.style.display='none'; }
     // 별 버튼
     var starBtn = document.getElementById('detail-star');
-    if(e.type==='try'){
+    if(e.type==='try'||e.type==='find'||e.type==='obs'){
       starBtn.style.display='';
       starBtn.innerHTML = e.starred ? '<span style="font-size:18px;line-height:1;">⭐</span>' : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.4 6.9.9-5 4.7 1.2 6.8L12 17.7l-6 3.1 1.2-6.8-5-4.7 6.9-.9z"/></svg>';
     } else {
@@ -1138,17 +1334,24 @@ body {
     // 덧붙이기
     renderComments(e);
     document.getElementById('comment-input').value='';
-    document.getElementById('detail-view').classList.add('open');
+    var dv = document.getElementById('detail-view');
+    dv.style.display='block';
+    dv.classList.add('open');
     window.scrollTo(0,0);
+    // 뒤로가기 버튼으로 목록 복귀 가능하게
+    history.pushState({detail: id}, '');
   }
 
   function renderDetailFields(e){
     var html = '';
     function row(label, val){
-      var empty = !val||!val.trim();
+      var trimmed = (val||'').trim();
+      var empty = !trimmed;
       return '<div class="dfield">' +
         '<div class="dfield-label">'+label+'</div>' +
-        '<div class="dfield-val'+(empty?' empty':'')+'">'+esc(val||'')+(empty?'—':'')+'</div>' +
+        (empty
+          ? ''
+          : '<div class="dfield-val">'+esc(trimmed)+'</div>') +
       '</div>';
     }
     if(e.type==='find'){
@@ -1185,10 +1388,19 @@ body {
         html += '</div></div>';
       }
     } else if(e.type==='try'){
+      var order = e.data.fieldOrder || 'A';
       html += row('조건', e.data.try_condition);
-      html += row('조건 수정', e.data.try_mod);
-      html += row('기대 행동', e.data.try_expected);
+      if(order==='B'){
+        html += row('기대 행동', e.data.try_expected);
+        html += row('조건 수정', e.data.try_mod);
+      } else {
+        html += row('조건 수정', e.data.try_mod);
+        html += row('기대 행동', e.data.try_expected);
+      }
       html += row('결과', e.data.try_result);
+      if(e.data.tags && e.data.tags.length>0){
+        html += '<div class="dfield"><div class="dfield-label">태그</div><div class="dfield-val"><div class="card-tags">'+e.data.tags.map(function(t){ return '<span class="card-tag">'+esc(t)+'</span>'; }).join('')+'</div></div></div>';
+      }
     }
     return html;
   }
@@ -1262,8 +1474,11 @@ body {
       var c=e.comments[i];
       html+='<div class="comment-item" data-cid="'+c.id+'">'+
         '<div class="comment-date">'+fmt(c.createdAt)+'</div>'+
-        '<div class="comment-body">'+esc(c.body)+'</div>'+
-        '<button class="comment-del" data-cid="'+c.id+'">✕</button>'+
+        '<div class="comment-body" id="cbody-'+c.id+'">'+esc(c.body)+'</div>'+
+        '<div class="comment-actions">'+
+          '<button class="comment-edit-btn" data-cid="'+c.id+'">🖊️</button>'+
+          '<button class="comment-del" data-cid="'+c.id+'">✕</button>'+
+        '</div>'+
       '</div>';
     }
     list.innerHTML=html;
@@ -1275,6 +1490,39 @@ body {
         if(!entry)return;
         entry.comments=entry.comments.filter(function(c){return c.id!==cid;});
         renderComments(entry); autoSave();
+      });
+    });
+    list.querySelectorAll('.comment-edit-btn').forEach(function(btn){
+      btn.addEventListener('click',function(ev){
+        ev.stopPropagation();
+        var cid=parseInt(this.getAttribute('data-cid'));
+        var entry=entries.find(function(x){return x.id===viewingId;});
+        if(!entry)return;
+        var comment=entry.comments.find(function(c){return c.id===cid;});
+        if(!comment)return;
+        var item=this.closest('.comment-item');
+        // 이미 수정 폼 열려있으면 닫기
+        var existing=item.querySelector('.comment-editing-form');
+        if(existing){ existing.remove(); document.getElementById('cbody-'+cid).style.display=''; return; }
+        document.getElementById('cbody-'+cid).style.display='none';
+        var form=document.createElement('div');
+        form.className='comment-editing-form';
+        form.innerHTML='<textarea class="comment-editing-textarea">'+esc(comment.body)+'</textarea>'+
+          '<div class="comment-edit-btns">'+
+            '<button class="comment-edit-cancel">취소</button>'+
+            '<button class="comment-edit-save">저장</button>'+
+          '</div>';
+        item.appendChild(form);
+        form.querySelector('.comment-edit-cancel').addEventListener('click',function(){
+          form.remove(); document.getElementById('cbody-'+cid).style.display='';
+        });
+        form.querySelector('.comment-edit-save').addEventListener('click',function(){
+          var newText=form.querySelector('.comment-editing-textarea').value.trim();
+          if(!newText)return;
+          comment.body=newText;
+          autoSave(); renderComments(entry);
+        });
+        form.querySelector('.comment-editing-textarea').focus();
       });
     });
   }
@@ -1289,21 +1537,28 @@ body {
 
   document.getElementById('back-btn').addEventListener('click',function(){
     document.getElementById('detail-view').classList.remove('open');
+    document.getElementById('detail-view').style.display='none';
     viewingId=null;
+    window.scrollTo(0,0);
   });
 
   document.getElementById('detail-del').addEventListener('click',function(){
-    if(!confirm('이 기록을 삭제할까요?'))return;
-    entries=entries.filter(function(x){return x.id!==viewingId;});
-    document.getElementById('detail-view').classList.remove('open');
-    viewingId=null; renderList(); autoSave();
+    showConfirm(function(){
+      entries=entries.filter(function(x){return x.id!==viewingId;});
+      autoSave();
+      viewingId=null;
+      var dv=document.getElementById('detail-view');
+      dv.classList.remove('open'); dv.style.display='none';
+      renderList();
+    });
   });
 
   document.getElementById('detail-edit').addEventListener('click',function(){
     var e=entries.find(function(x){return x.id===viewingId;});
     if(!e)return;
-    document.getElementById('detail-view').classList.remove('open');
-    openWriteSheet(e);
+    var dv=document.getElementById('detail-view');
+    dv.classList.remove('open'); dv.style.display='none';
+    openWriteSheet(e, null);
   });
 
   document.getElementById('detail-retry').addEventListener('click',function(){
@@ -1412,31 +1667,34 @@ body {
     document.getElementById('fields-find').classList.toggle('hidden', type!=='find');
     document.getElementById('fields-obs').classList.toggle('hidden',  type!=='obs');
     document.getElementById('fields-try').classList.toggle('hidden',  type!=='try');
+    if(type==='try') renderTryMidFields();
   }
 
   document.querySelectorAll('.type-btn').forEach(function(btn){
     btn.addEventListener('click',function(){ setType(this.getAttribute('data-type')); });
   });
 
-  function openWriteSheet(editEntry){
+  function openWriteSheet(editEntry, defaultType){
     editingId = editEntry ? editEntry.id : null;
-    var type = editEntry ? editEntry.type : 'find';
+    var type = editEntry ? editEntry.type : (defaultType || 'find');
     document.getElementById('sheet-title').textContent = editEntry ? '기록 수정' : '새 기록';
-    // 타입 선택 표시 여부
     document.getElementById('type-row').style.display = editEntry ? 'none' : '';
+    // tryFieldOrder 복원
+    if(editEntry && editEntry.type==='try' && editEntry.data.fieldOrder){
+      tryFieldOrder = editEntry.data.fieldOrder;
+    } else if(!editEntry) {
+      tryFieldOrder = 'A';
+    }
     setType(type);
     document.getElementById('form-title').value = editEntry ? (editEntry.title||'') : '';
-    // 필드 채우기
     if(editEntry){
       var d=editEntry.data||{};
       if(type==='find'){
-        document.getElementById('find-subject').value=d.subject||'';
+        document.getElementById('find-subject').value=d.subject||'나는';
         document.getElementById('find-condition').value=d.condition||'';
-        // 결과 블록 복원
         if(d.results && d.results.length>0){
           resultBlocks=d.results.map(function(r,i){ return {id:rbCounter++,text:r.text||'',rtype:r.rtype||'기분'}; });
         } else if(d.behavior){
-          // 구 데이터 호환
           resultBlocks=[{id:rbCounter++,text:d.behavior,rtype:d.rtype||'기분'}];
         } else {
           resultBlocks=[{id:rbCounter++,text:'',rtype:'기분'}];
@@ -1445,7 +1703,7 @@ body {
         renderResultBlocks();
         renderFormTagPool();
       } else if(type==='obs'){
-        document.getElementById('obs-subject').value=d.obs_subject||'';
+        document.getElementById('obs-subject').value=d.obs_subject||'나는';
         document.getElementById('obs-condition').value=d.obs_condition||'';
         document.getElementById('obs-period').value=d.obs_sub_condition||d.obs_period||'';
         document.getElementById('obs-behavior').value=d.obs_behavior||'';
@@ -1458,27 +1716,35 @@ body {
         }
         renderObsResultBlocks();
       } else if(type==='try'){
+        renderTryMidFields();
         document.getElementById('try-condition').value=d.try_condition||'';
         document.getElementById('try-mod').value=d.try_mod||'';
         document.getElementById('try-expected').value=d.try_expected||'';
         document.getElementById('try-result').value=d.try_result||'';
+        selectedTryTags=(d.tags||[]).slice();
+        renderTryTagPool();
       }
     } else {
       document.getElementById('form-title').value='';
       resultBlocks=[{id:rbCounter++,text:'',rtype:'기분'}];
       obsResultBlocks=[{id:rbCounter++,text:'',rtype:'기분'}];
       selectedTags=[];
+      selectedTryTags=[];
       renderResultBlocks(); renderObsResultBlocks(); renderFormTagPool();
       ['find-subject','find-condition','find-behavior',
        'obs-subject','obs-behavior','obs-condition','obs-period',
-       'try-condition','try-mod','try-expected','try-result'].forEach(function(id){
+       'try-condition','try-result'].forEach(function(id){
         var el=document.getElementById(id); if(el) el.value='';
       });
+      // 기본값 '나는'
+      var fsub = document.getElementById('find-subject'); if(fsub) fsub.value='나는';
+      var osub = document.getElementById('obs-subject'); if(osub) osub.value='나는';
+      renderTryMidFields();
+      renderTryTagPool();
     }
     document.getElementById('write-overlay').classList.add('open');
   }
 
-  document.getElementById('write-btn').addEventListener('click',function(){ openWriteSheet(null); });
   document.getElementById('form-cancel').addEventListener('click',function(){
     document.getElementById('write-overlay').classList.remove('open');
   });
@@ -1495,7 +1761,7 @@ body {
     } else if(selectedType==='obs'){
       d={obs_subject:document.getElementById('obs-subject').value,obs_condition:document.getElementById('obs-condition').value,obs_sub_condition:document.getElementById('obs-period').value,obs_behavior:document.getElementById('obs-behavior').value,obs_results:obsResultBlocks.map(function(r){return {text:r.text,rtype:r.rtype};})};
     } else if(selectedType==='try'){
-      d={try_condition:document.getElementById('try-condition').value,try_mod:document.getElementById('try-mod').value,try_expected:document.getElementById('try-expected').value,try_result:document.getElementById('try-result').value};
+      d={try_condition:document.getElementById('try-condition').value.trim(),try_mod:(document.getElementById('try-mod')||{}).value.trim()||'',try_expected:(document.getElementById('try-expected')||{}).value.trim()||'',try_result:document.getElementById('try-result').value.trim(),tags:selectedTryTags.slice(),fieldOrder:tryFieldOrder};
     }
 
     if(editingId!==null){
@@ -1543,18 +1809,34 @@ body {
         if(data.idc)idc=data.idc;
         if(data.tagPool)tagPool=data.tagPool;
         if(data.RTYPES)RTYPES=data.RTYPES;
-        renderList(); autoSave(); alert('불러오기 완료!');
-      }catch(err){ alert('파일을 읽을 수 없어요.'); }
+        renderList(); autoSave(); showToast('불러오기 완료! 🌿');
+      }catch(err){ showToast('파일을 읽을 수 없어요.'); }
     };
     reader.readAsText(file); e.target.value='';
   });
 
   bindPreview();
+  renderTryMidFields();
   autoLoad();
   renderResultBlocks();
   renderObsResultBlocks();
   renderFormTagPool();
+  renderTryTagPool();
   renderList();
+
+  // 초기 히스토리 상태
+  history.replaceState({detail: null}, '');
+
+  // 핸드폰 뒤로가기 버튼 처리
+  window.addEventListener('popstate', function(e){
+    var dv = document.getElementById('detail-view');
+    if(dv.classList.contains('open')){
+      dv.classList.remove('open');
+      dv.style.display='none';
+      viewingId=null;
+      window.scrollTo(0,0);
+    }
+  });
 })();
 </script>
 </body>
