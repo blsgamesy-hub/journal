@@ -1,4 +1,4 @@
-const CACHE = 'journal-v1';
+const CACHE = 'journal-v2';
 const FILES = [
   './journal.html',
   './journal_icon.png',
