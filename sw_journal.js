@@ -1,4 +1,4 @@
-const CACHE = 'journal-v4';
+const CACHE = 'journal-v5';
 const FILES = [
   './journal_icon.png',
   './manifest_journal.json'
