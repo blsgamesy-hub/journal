@@ -1,6 +1,5 @@
-const CACHE = 'journal-v2';
+const CACHE = 'journal-v3';
 const FILES = [
-  './journal.html',
   './journal_icon.png',
   './manifest_journal.json'
 ];
@@ -24,6 +23,14 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // journal.html → network-first (항상 최신 파일 받기)
+  if (e.request.url.includes('journal.html') || e.request.url.endsWith('/journal/')) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+  // 나머지 → cache-first
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );
