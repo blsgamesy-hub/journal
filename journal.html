@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="발견일지">
 <link rel="apple-touch-icon" href="./journal_icon.png">
-<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&family=Noto+Serif+KR:wght@500&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #f5f2ed;
@@ -41,15 +41,16 @@ body {
   max-width: 640px; margin: 0 auto;
   padding: 40px 24px 0;
   display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 8px;
 }
 .header-left {}
 .app-title {
-  font-family: 'Nanum Myeongjo', serif;
+  font-family: 'Gowun Batang', serif;
   font-size: 26px; font-weight: 700;
   letter-spacing: -0.5px;
 }
 .app-sub { font-size: 11px; color: var(--ink-light); margin-top: 3px; letter-spacing: 0.3px; }
-.header-btns { display: flex; gap: 2px; align-items: center; }
+.header-btns { display: flex; gap: 2px; align-items: center; flex-wrap: nowrap; flex-shrink: 0; }
 .hbtn {
   background: none; border: none;
   padding: 6px; cursor: pointer;
@@ -116,8 +117,8 @@ body {
 .badge-try  { background: var(--bg-try);  color: var(--c-try); }
 
 .card-title {
-  font-family: 'Nanum Myeongjo', serif;
-  font-size: 15px; line-height: 1.55;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px; line-height: 1.55; font-weight: 500;
   color: var(--ink); margin-bottom: 8px;
 }
 .card-footer {
@@ -168,8 +169,8 @@ body {
   margin: 0 auto 18px;
 }
 .sheet-title {
-  font-family: 'Nanum Myeongjo', serif;
-  font-size: 20px; margin-bottom: 18px;
+  font-family: 'Gowun Batang', serif;
+  font-size: 20px; margin-bottom: 18px; font-weight: 700;
 }
 
 /* 타입 선택 */
@@ -215,8 +216,8 @@ body {
 .title-preview {
   background: var(--bg); border-radius: 8px;
   padding: 10px 14px; margin-bottom: 18px;
-  font-family: 'Nanum Myeongjo', serif;
-  font-size: 14px; color: var(--ink-mid);
+  font-family: 'Gowun Batang', serif;
+  font-size: 14px; color: var(--ink-mid); font-weight: 700;
   line-height: 1.6; min-height: 40px;
   border: 1px solid var(--line);
 }
@@ -261,8 +262,8 @@ body {
   font-weight: 500; margin-bottom: 10px;
 }
 .detail-title {
-  font-family: 'Nanum Myeongjo', serif;
-  font-size: 22px; line-height: 1.55;
+  font-family: 'Gowun Batang', serif;
+  font-size: 22px; line-height: 1.55; font-weight: 700;
   margin-bottom: 6px;
 }
 .detail-date { font-size: 11px; color: var(--ink-faint); margin-bottom: 22px; }
@@ -604,8 +605,10 @@ body {
 .sync-indicator {
   display: flex; align-items: center; gap: 4px;
   font-size: 11px; color: var(--ink-faint);
-  padding: 3px 6px; border-radius: 6px;
+  padding: 3px 4px; border-radius: 6px;
+  flex-shrink: 0;
 }
+.sync-indicator #sync-label { display: none; }
 .sync-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--ink-faint); flex-shrink: 0;
@@ -650,8 +653,8 @@ body {
   animation: slideUp .22s ease;
 }
 .migration-title {
-  font-family: 'Nanum Myeongjo', serif;
-  font-size: 18px; margin-bottom: 8px;
+  font-family: 'Gowun Batang', serif;
+  font-size: 18px; margin-bottom: 8px; font-weight: 700;
 }
 .migration-desc { font-size: 13px; color: var(--ink-light); margin-bottom: 20px; line-height: 1.65; }
 .migration-opt {
@@ -677,8 +680,8 @@ body {
     <div class="app-sub">나를 관찰하고 기록하는 공간</div>
   </div>
   <div class="header-btns">
-    <div class="sync-indicator" id="sync-indicator" style="display:none;">
-      <div class="sync-dot" id="sync-dot"></div>
+    <div class="sync-indicator" id="sync-indicator">
+      <div class="sync-dot offline" id="sync-dot"></div>
       <span id="sync-label"></span>
     </div>
     <button class="hbtn" id="save-btn" title="JSON 백업">
@@ -978,8 +981,12 @@ window.dispatchEvent(new Event('firebase-ready'));
     var ind = document.getElementById('sync-indicator');
     var dot = document.getElementById('sync-dot');
     var lbl = document.getElementById('sync-label');
-    if(!isLoggedIn){ ind.style.display='none'; return; }
     ind.style.display='flex';
+    if(!isLoggedIn){
+      dot.className = 'sync-dot offline';
+      lbl.textContent = '';
+      return;
+    }
     dot.className = 'sync-dot ' + (status||'');
     lbl.textContent = label||'';
   }
@@ -2293,7 +2300,7 @@ window.dispatchEvent(new Event('firebase-ready'));
         currentUid=null;
         stopSync();
         updateAuthUI(null);
-        setSyncStatus('','');
+        setSyncStatus('offline','');
         // 비로그인: 로컬 로드
         autoLoad();
         renderList();
