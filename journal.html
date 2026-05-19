@@ -1418,19 +1418,28 @@ window.dispatchEvent(new Event('firebase-ready'));
     reader.onload = function(ev){
       try{
         var data = JSON.parse(ev.target.result);
-        if(data.entries) entries = data.entries;
-        if(data.idc) idc = data.idc;
-        if(data.tagPool) tagPool = data.tagPool;
-        if(data.RTYPES) RTYPES = data.RTYPES;
+        if(!data.entries){ showToast('올바른 백업 파일이 아니에요.'); return; }
         if(isLoggedIn){
-          // 로그인 상태에서 불러오기 → Firestore에도 반영
-          batchWriteEntries(currentUid, entries).then(function(){
-            showToast('불러오기 완료! 🌿');
+          // 로그인 상태: 불러오기는 기존 클라우드 기록에 "추가"되며
+          // 같은 글이 있어도 중복 카드가 생길 수 있음 → 확인받기
+          var cnt = data.entries.length;
+          document.querySelector('.confirm-bar-msg').textContent =
+            '기록 '+cnt+'개를 클라우드에 추가할까요? (기존 기록과 중복될 수 있어요)';
+          showConfirm(function(){
+            document.querySelector('.confirm-bar-msg').textContent='이 기록을 삭제할까요?';
+            if(data.tagPool) tagPool = data.tagPool;
+            if(data.RTYPES) RTYPES = data.RTYPES;
+            batchWriteEntries(currentUid, data.entries).then(function(){
+              showToast('불러오기 완료! 🌿');
+            }).catch(function(){ showToast('불러오기 실패 😢'); });
           });
         } else {
+          entries = data.entries;
+          if(data.idc) idc = data.idc;
+          if(data.tagPool) tagPool = data.tagPool;
+          if(data.RTYPES) RTYPES = data.RTYPES;
           autoSave(); renderList(); showToast('불러오기 완료! 🌿');
         }
-        renderList();
       }catch(err){ showToast('파일을 읽을 수 없어요.'); }
     };
     reader.readAsText(file); e.target.value='';
@@ -1571,16 +1580,16 @@ window.dispatchEvent(new Event('firebase-ready'));
   function startDetailSync(uid, entryId){
     stopDetailSync();
     var fb = window.__fb;
-    var basePath = 'users/'+uid+'/entries/'+entryId;
+    var entryRef = fb.doc(fb.db, 'users/'+uid+'/entries/'+entryId);
 
-    unsubRetries = fb.onSnapshot(fb.collection(fb.db, basePath+'/retries'), function(snap){
+    unsubRetries = fb.onSnapshot(fb.collection(entryRef,'retries'), function(snap){
       var entry = entries.find(function(x){ return x.id===entryId; });
       if(!entry) return;
       entry.retries = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
         .sort(function(a,b){ return a.createdAt - b.createdAt; });
       renderRetries(entry);
     });
-    unsubComments = fb.onSnapshot(fb.collection(fb.db, basePath+'/comments'), function(snap){
+    unsubComments = fb.onSnapshot(fb.collection(entryRef,'comments'), function(snap){
       var entry = entries.find(function(x){ return x.id===entryId; });
       if(!entry) return;
       entry.comments = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
@@ -1620,10 +1629,9 @@ window.dispatchEvent(new Event('firebase-ready'));
   async function fbDeleteEntry(entryId){
     var fb = window.__fb;
     var ref = fb.doc(fb.db, 'users/'+currentUid+'/entries/'+entryId);
-    var basePath = 'users/'+currentUid+'/entries/'+entryId;
     try{
-      var retriesSnap = await fb.getDocs(fb.collection(fb.db, basePath+'/retries'));
-      var commentsSnap = await fb.getDocs(fb.collection(fb.db, basePath+'/comments'));
+      var retriesSnap = await fb.getDocs(fb.collection(ref,'retries'));
+      var commentsSnap = await fb.getDocs(fb.collection(ref,'comments'));
       var batch = fb.writeBatch(fb.db);
       retriesSnap.forEach(function(d){ batch.delete(d.ref); });
       commentsSnap.forEach(function(d){ batch.delete(d.ref); });
@@ -1635,9 +1643,8 @@ window.dispatchEvent(new Event('firebase-ready'));
   async function fbAddRetry(entryId, retryData){
     var fb = window.__fb;
     var entryRef = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId);
-    var retriesCol = fb.collection(fb.db,'users/'+currentUid+'/entries/'+entryId+'/retries');
     try{
-      await fb.addDoc(retriesCol, retryData);
+      await fb.addDoc(fb.collection(entryRef,'retries'), retryData);
       await fb.updateDoc(entryRef, {retryCount: (entries.find(function(x){return x.id===entryId;})||{}).retries ? (entries.find(function(x){return x.id===entryId;})).retries.length : 0});
     } catch(e){ showToast('저장 실패 😢'); console.error(e); }
   }
@@ -1658,9 +1665,9 @@ window.dispatchEvent(new Event('firebase-ready'));
 
   async function fbAddComment(entryId, commentData){
     var fb = window.__fb;
-    var commentsCol = fb.collection(fb.db,'users/'+currentUid+'/entries/'+entryId+'/comments');
+    var entryRef = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId);
     try{
-      await fb.addDoc(commentsCol, commentData);
+      await fb.addDoc(fb.collection(entryRef,'comments'), commentData);
     } catch(e){ showToast('저장 실패 😢'); console.error(e); }
   }
 
@@ -1693,25 +1700,50 @@ window.dispatchEvent(new Event('firebase-ready'));
   async function batchWriteEntries(uid, entriesToWrite){
     var fb = window.__fb;
     var col = fb.collection(fb.db,'users/'+uid+'/entries');
-    // 500개 제한 대비 청크 처리
-    var chunks = [];
-    for(var i=0; i<entriesToWrite.length; i+=400){
-      chunks.push(entriesToWrite.slice(i,i+400));
-    }
-    for(var ci=0; ci<chunks.length; ci++){
-      var batch = fb.writeBatch(fb.db);
-      chunks[ci].forEach(function(e){
-        var ref = fb.doc(col);
-        var toSave = Object.assign({}, e);
-        var retries = toSave.retries || [];
-        var comments = toSave.comments || [];
-        delete toSave.id; delete toSave.retries; delete toSave.comments;
-        toSave.retryCount = retries.length;
-        toSave.commentCount = comments.length;
-        batch.set(ref, toSave);
-      });
+    // entry 본체 + retries + comments 모두 쓰기 작업이므로
+    // 500개 제한을 "쓰기 작업 수" 기준으로 재계산한다.
+    var batch = fb.writeBatch(fb.db);
+    var opCount = 0;
+
+    async function flush(){
+      if(opCount === 0) return;
       await batch.commit();
+      batch = fb.writeBatch(fb.db);
+      opCount = 0;
     }
+
+    for(var i=0; i<entriesToWrite.length; i++){
+      var e = entriesToWrite[i];
+      var toSave = Object.assign({}, e);
+      var retries = toSave.retries || [];
+      var comments = toSave.comments || [];
+      delete toSave.id; delete toSave.retries; delete toSave.comments;
+      toSave.retryCount = retries.length;
+      toSave.commentCount = comments.length;
+
+      var entryRef = fb.doc(col);
+      batch.set(entryRef, toSave);
+      opCount++;
+      if(opCount >= 400) await flush();
+
+      // retries 서브컬렉션
+      for(var ri=0; ri<retries.length; ri++){
+        var r = Object.assign({}, retries[ri]);
+        delete r.id;
+        batch.set(fb.doc(fb.collection(entryRef,'retries')), r);
+        opCount++;
+        if(opCount >= 400) await flush();
+      }
+      // comments 서브컬렉션
+      for(var ci=0; ci<comments.length; ci++){
+        var c = Object.assign({}, comments[ci]);
+        delete c.id;
+        batch.set(fb.doc(fb.collection(entryRef,'comments')), c);
+        opCount++;
+        if(opCount >= 400) await flush();
+      }
+    }
+    await flush();
     await fbSaveMeta();
   }
 
@@ -1770,11 +1802,38 @@ window.dispatchEvent(new Event('firebase-ready'));
       var fb = window.__fb;
       var cloudSnap = await fb.getDocs(fb.query(fb.collection(fb.db,'users/'+uid+'/entries')));
       var cloudEntries = cloudSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
-      var merged = mergeEntries(localEntries, cloudEntries);
-      var toUpload = merged.filter(function(e){
-        return !cloudEntries.find(function(c){ return c.id === e.id; });
+      function mkey(e){ return e.createdAt+':'+e.type+':'+(e.title||'').slice(0,20); }
+      var cloudByKey = {};
+      cloudSnap.docs.forEach(function(d){
+        var data = d.data();
+        cloudByKey[mkey(data)] = d;
       });
+      // (1) 클라우드에 없는 로컬 entry → 통째로 업로드 (서브컬렉션 포함, batchWriteEntries 수정본)
+      var toUpload = localEntries.filter(function(e){ return !cloudByKey[mkey(e)]; });
       if(toUpload.length > 0) await batchWriteEntries(uid, toUpload);
+      // (2) 양쪽에 다 있는 entry → 로컬에만 있던 retries/comments를
+      //     클라우드 서브컬렉션이 비어 있을 때만 보충 (덮어쓰지 않음)
+      for(var li=0; li<localEntries.length; li++){
+        var le = localEntries[li];
+        var cd = cloudByKey[mkey(le)];
+        if(!cd) continue;
+        var lr = le.retries || [], lc = le.comments || [];
+        if(lr.length === 0 && lc.length === 0) continue;
+        var rSnap = await fb.getDocs(fb.collection(cd.ref,'retries'));
+        var cSnap = await fb.getDocs(fb.collection(cd.ref,'comments'));
+        if(rSnap.size > 0 || cSnap.size > 0) continue; // 이미 내용 있으면 건너뜀
+        var subBatch = fb.writeBatch(fb.db);
+        lr.forEach(function(r){
+          var rr = Object.assign({}, r); delete rr.id;
+          subBatch.set(fb.doc(fb.collection(cd.ref,'retries')), rr);
+        });
+        lc.forEach(function(c){
+          var cc = Object.assign({}, c); delete cc.id;
+          subBatch.set(fb.doc(fb.collection(cd.ref,'comments')), cc);
+        });
+        subBatch.update(cd.ref, {retryCount:lr.length, commentCount:lc.length});
+        await subBatch.commit();
+      }
       localStorage.removeItem('journal_v2');
       showToast('병합 완료! 🌿');
     };
@@ -1795,6 +1854,8 @@ window.dispatchEvent(new Event('firebase-ready'));
     };
   }
 
+  // (구) 병합 로직 — 서브컬렉션을 누락시키는 문제가 있어 mig-merge 핸들러에서
+  //      직접 처리하도록 대체됨. 현재 호출되지 않음. 호환성을 위해 남겨둠.
   function mergeEntries(local, cloud){
     var merged = {};
     function key(e){ return e.createdAt+':'+e.type+':'+(e.title||'').slice(0,20); }
