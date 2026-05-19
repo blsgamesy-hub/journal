@@ -1571,16 +1571,16 @@ window.dispatchEvent(new Event('firebase-ready'));
   function startDetailSync(uid, entryId){
     stopDetailSync();
     var fb = window.__fb;
-    var entryRef = fb.doc(fb.db, 'users/'+uid+'/entries/'+entryId);
+    var basePath = 'users/'+uid+'/entries/'+entryId;
 
-    unsubRetries = fb.onSnapshot(fb.collection(entryRef,'retries'), function(snap){
+    unsubRetries = fb.onSnapshot(fb.collection(fb.db, basePath+'/retries'), function(snap){
       var entry = entries.find(function(x){ return x.id===entryId; });
       if(!entry) return;
       entry.retries = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
         .sort(function(a,b){ return a.createdAt - b.createdAt; });
       renderRetries(entry);
     });
-    unsubComments = fb.onSnapshot(fb.collection(entryRef,'comments'), function(snap){
+    unsubComments = fb.onSnapshot(fb.collection(fb.db, basePath+'/comments'), function(snap){
       var entry = entries.find(function(x){ return x.id===entryId; });
       if(!entry) return;
       entry.comments = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
@@ -1620,9 +1620,10 @@ window.dispatchEvent(new Event('firebase-ready'));
   async function fbDeleteEntry(entryId){
     var fb = window.__fb;
     var ref = fb.doc(fb.db, 'users/'+currentUid+'/entries/'+entryId);
+    var basePath = 'users/'+currentUid+'/entries/'+entryId;
     try{
-      var retriesSnap = await fb.getDocs(fb.collection(ref,'retries'));
-      var commentsSnap = await fb.getDocs(fb.collection(ref,'comments'));
+      var retriesSnap = await fb.getDocs(fb.collection(fb.db, basePath+'/retries'));
+      var commentsSnap = await fb.getDocs(fb.collection(fb.db, basePath+'/comments'));
       var batch = fb.writeBatch(fb.db);
       retriesSnap.forEach(function(d){ batch.delete(d.ref); });
       commentsSnap.forEach(function(d){ batch.delete(d.ref); });
@@ -1634,8 +1635,9 @@ window.dispatchEvent(new Event('firebase-ready'));
   async function fbAddRetry(entryId, retryData){
     var fb = window.__fb;
     var entryRef = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId);
+    var retriesCol = fb.collection(fb.db,'users/'+currentUid+'/entries/'+entryId+'/retries');
     try{
-      await fb.addDoc(fb.collection(entryRef,'retries'), retryData);
+      await fb.addDoc(retriesCol, retryData);
       await fb.updateDoc(entryRef, {retryCount: (entries.find(function(x){return x.id===entryId;})||{}).retries ? (entries.find(function(x){return x.id===entryId;})).retries.length : 0});
     } catch(e){ showToast('저장 실패 😢'); console.error(e); }
   }
@@ -1656,9 +1658,9 @@ window.dispatchEvent(new Event('firebase-ready'));
 
   async function fbAddComment(entryId, commentData){
     var fb = window.__fb;
-    var entryRef = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId);
+    var commentsCol = fb.collection(fb.db,'users/'+currentUid+'/entries/'+entryId+'/comments');
     try{
-      await fb.addDoc(fb.collection(entryRef,'comments'), commentData);
+      await fb.addDoc(commentsCol, commentData);
     } catch(e){ showToast('저장 실패 😢'); console.error(e); }
   }
 
