@@ -32,6 +32,21 @@
   --detail-title-font: 'Noto Serif KR', serif;
   --detail-title-weight: 500;
   --detail-title-size: 17px;
+
+  /* 건축일지 색상 */
+  --c-blueprint: #5a6a82;
+  --c-brick: #8a5040;
+  --c-bone: #6e6358;
+  --bg-blueprint: #f0f2f6;
+  --bg-brick: #f7f0ee;
+  --bg-bone: #f4f2ef;
+
+  /* 뼈대 상태 색 */
+  --bone-draft:    #aaa;
+  --bone-testing:  #c8963a;
+  --bone-stable:   #7a9a5a;
+  --bone-embedded: #4a7a4a;
+  --bone-cracked:  #b05050;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -739,8 +754,7 @@ body {
 .obs-format-btn.sel { background: var(--bg-obs); border-color: var(--c-obs); color: var(--c-obs); font-weight: 500; }
 
 /* 시간대별 입력 */
-.timeslot-wrap { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-.timeslot-row {
+.timeslot-wrap { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }.timeslot-row {
   display: flex; gap: 8px; align-items: flex-start;
   border: 1px solid var(--line); border-radius: 8px;
   padding: 8px 10px;
@@ -775,6 +789,152 @@ body {
 }
 .timeslot-del:hover { color: #b05050; }
 
+/* ══ 건축일지 CSS ══ */
+
+/* 청사진 배지 */
+.badge-blueprint { background: var(--bg-blueprint); color: var(--c-blueprint); }
+.badge-brick      { background: var(--bg-brick);      color: var(--c-brick); }
+.badge-bone       { background: var(--bg-bone);        color: var(--c-bone); }
+.acc-blueprint    { background: var(--c-blueprint); }
+.acc-brick        { background: var(--c-brick); }
+.acc-bone         { background: var(--c-bone); }
+
+/* 벽돌 강도 — 카드 오른쪽 쌓이는 벽돌 */
+.brick-stack {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 18px; border-radius: 0 10px 10px 0;
+  display: flex; flex-direction: column;
+  justify-content: flex-end;
+  padding: 4px 3px;
+  gap: 2px;
+  overflow: hidden; cursor: pointer;
+  background: transparent;
+}
+.brick-stack-block {
+  width: 100%; border-radius: 2px;
+  flex: 0 0 calc(25% - 2px);
+  transition: background .15s;
+}
+.brick-stack-block.filled { background: #d4b8a0; }
+.brick-stack-block.empty  { background: var(--line); }
+
+/* 폼 내 강도 선택 점 (4개) */
+.brick-str-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--line);
+  background: transparent; cursor: pointer;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.brick-str-dot:hover { transform: scale(1.15); }
+.brick-str-dot.active-1 { background: #d4b8a0; border-color: #b89070; }
+.brick-str-dot.active-2 { background: #c09870; border-color: #a07050; }
+.brick-str-dot.active-3 { background: #a07050; border-color: #804030; }
+.brick-str-dot.active-4 { background: #804030; border-color: #603020; }
+
+
+/* 뼈대 상태 칩 */
+.bone-status-chip {
+  padding: 6px 14px; border-radius: 16px;
+  border: 1.5px solid var(--line);
+  background: transparent;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px; color: var(--ink-light);
+  cursor: pointer; transition: all .15s;
+}
+.bone-status-chip.sel { color: #fff; border-color: transparent; }
+.bone-status-chip[data-s="draft"].sel    { background: var(--bone-draft); }
+.bone-status-chip[data-s="testing"].sel  { background: var(--bone-testing); }
+.bone-status-chip[data-s="stable"].sel   { background: var(--bone-stable); }
+.bone-status-chip[data-s="embedded"].sel { background: var(--bone-embedded); }
+.bone-status-chip[data-s="cracked"].sel  { background: var(--bone-cracked); }
+
+/* 상태 배지 (카드/상세) */
+.bone-status-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 5px; vertical-align: middle;
+}
+.bone-status-dot.draft    { background: var(--bone-draft); }
+.bone-status-dot.testing  { background: var(--bone-testing); }
+.bone-status-dot.stable   { background: var(--bone-stable); }
+.bone-status-dot.embedded { background: var(--bone-embedded); }
+.bone-status-dot.cracked  { background: var(--bone-cracked); }
+
+/* 뼈대 히스토리 타임라인 */
+#bone-history-list {
+  position: relative;
+  padding-left: 24px;
+}
+.bone-history-item {
+  padding: 0 0 20px 16px;
+  position: relative;
+}
+.bone-history-item:last-child { padding-bottom: 0; }
+/* 도트 */
+.bone-history-item::before {
+  content: '';
+  position: absolute; left: -5px; top: 4px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  border: 2px solid var(--paper);
+  box-sizing: border-box;
+  z-index: 1;
+}
+/* 도트 아래에서 다음 도트까지 잇는 선 */
+.bone-history-item:not(:last-child)::after {
+  content: '';
+  position: absolute; left: -1px; top: 14px;
+  width: 1px; bottom: 0;
+  background: var(--line);
+  z-index: 0;
+}
+.bone-history-item[data-status="draft"]::before    { background: var(--bone-draft); }
+.bone-history-item[data-status="testing"]::before  { background: var(--bone-testing); }
+.bone-history-item[data-status="stable"]::before   { background: var(--bone-stable); }
+.bone-history-item[data-status="embedded"]::before { background: var(--bone-embedded); }
+.bone-history-item[data-status="cracked"]::before  { background: var(--bone-cracked); }
+.bone-history-item[data-genesis="true"]::before    { background: var(--ink-faint); }
+.bone-history-main { font-size: 13px; color: var(--ink); line-height: 1.6; }
+.bone-history-memo { font-size: 13px; color: var(--ink-mid); margin-top: 3px; white-space: pre-wrap; }
+.bone-history-date { font-size: 11px; color: var(--ink-faint); }
+.bone-history-actions {
+  position: absolute; top: 2px; right: 0;
+  display: flex; gap: 8px; align-items: center;
+  opacity: 0; transition: opacity .15s;
+}
+.bone-history-item:hover .bone-history-actions { opacity: 1; }
+
+/* 참조 칩 */
+.ref-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: 12px; padding: 4px 10px;
+  font-size: 12px; color: var(--ink-light);
+  cursor: pointer; transition: all .15s;
+  max-width: 200px;
+}
+.ref-chip:hover { border-color: var(--ink-faint); color: var(--ink); }
+.ref-chip.broken { color: var(--ink-faint); cursor: default; opacity: 0.65; }
+.ref-chip-del {
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-faint); font-size: 11px; padding: 0;
+  line-height: 1; flex-shrink: 0;
+}
+.ref-chip-del:hover { color: #b05050; }
+
+/* 참조 목록 아이템 */
+.ref-list-item {
+  padding: 10px 14px; border: 1px solid var(--line);
+  border-radius: 8px; margin-bottom: 6px;
+  cursor: pointer; transition: all .15s;
+  font-size: 13px; color: var(--ink);
+}
+.ref-list-item:hover { background: var(--bg); border-color: var(--ink-faint); }
+
+/* 벽돌로 복사 버튼 */
+.act-btn.copy-to-brick { color: var(--c-brick); border-color: #e0c8c0; }
+.act-btn.copy-to-brick:hover { background: var(--bg-brick); }
+
 /* 상세뷰 시간대별 표시 */
 .detail-timeslot-row {
   display: flex; gap: 10px; padding: 6px 0;
@@ -796,9 +956,9 @@ body {
 <body>
 
 <div class="header">
-  <div class="header-left">
-    <div class="app-title">나 발견 일지 ✍️</div>
-    <div class="app-sub">나를 관찰하고 기록하는 공간</div>
+  <div class="header-left" id="space-toggle-area" style="cursor:pointer;" title="공간 전환">
+    <div class="app-title" id="app-title">나 발견 일지 ✍️</div>
+    <div class="app-sub" id="app-sub">나를 관찰하고 기록하는 공간 <span id="space-toggle-hint" style="color:var(--ink-faint);font-size:10px;">⇄ 건축일지</span></div>
   </div>
   <div class="header-btns">
     <div class="sync-indicator" id="sync-indicator">
@@ -833,6 +993,7 @@ body {
   </div>
 </div>
 
+<div id="journal-space">
 <div class="tabs">
   <div class="tab active" data-tab="all">전체</div>
   <div class="tab t-find" data-tab="find">패턴 발견</div>
@@ -847,6 +1008,7 @@ body {
 <div class="tag-filter-wrap" id="tag-filter-wrap"></div>
 <div class="list-wrap" id="list-wrap"></div>
 <button class="fab" id="write-btn">+ 작성하기</button>
+</div><!-- /journal-space -->
 <!-- 작성/수정 오버레이 -->
 <div class="overlay" id="write-overlay">
   <div class="sheet" id="write-sheet">
@@ -999,6 +1161,7 @@ body {
     <div class="detail-actions">
       <button class="act-btn del" id="detail-del">삭제</button>
       <button class="act-btn" id="detail-edit">수정</button>
+      <button class="act-btn copy-to-brick hidden" id="detail-copy-brick">🧱 벽돌로 복사</button>
       <button class="act-btn retry" id="detail-retry"></button>
     </div>
     <div class="retries-section" id="retries-section"></div>
@@ -1009,6 +1172,199 @@ body {
         <textarea class="comment-textarea" id="comment-input" placeholder="덧붙이고 싶은 말을 적어요..."></textarea>
         <button class="comment-submit" id="comment-submit">추가</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ 건축일지 공간 ══════════════════ -->
+<div id="builder-space" style="display:none;">
+
+<!-- 건축일지 탭 -->
+<div class="tabs" id="builder-tabs">
+  <div class="tab active" data-btab="all">전체</div>
+  <div class="tab" data-btab="brick">벽돌</div>
+  <div class="tab" data-btab="bone">뼈대</div>
+  <div class="tab" data-btab="blueprint">청사진</div>
+</div>
+<div class="list-wrap" id="builder-list-wrap"></div>
+<button class="fab" id="builder-write-btn">+ 기록하기</button>
+
+<!-- 청사진 작성 오버레이 -->
+<div class="overlay" id="blueprint-write-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="blueprint-sheet-title">청사진 기록</div>
+    <div class="type-row" id="blueprint-kind-row">
+      <button class="type-btn" data-kind="열망">열망</button>
+      <button class="type-btn" data-kind="문제">문제</button>
+      <button class="type-btn" data-kind="화두">화두</button>
+    </div>
+    <div class="field-group">
+      <div class="field-label">내용</div>
+      <textarea class="field-textarea" id="blueprint-body" placeholder="적어요..." style="min-height:100px;"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-label">태그 <span class="field-opt">전체 공유</span></div>
+      <div class="tag-pool" id="blueprint-tag-pool"></div>
+      <div class="tag-add-row">
+        <input class="tag-add-input" id="blueprint-tag-input" placeholder="새 태그 입력..." />
+        <button class="tag-add-btn" id="blueprint-tag-add-btn">+ 추가</button>
+      </div>
+    </div>
+    <div class="form-btns">
+      <button class="btn-cancel" id="blueprint-cancel">취소</button>
+      <button class="btn-save" id="blueprint-save">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 벽돌 작성 오버레이 -->
+<div class="overlay" id="brick-write-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="brick-sheet-title">벽돌 기록</div>
+    <!-- 형식 선택 -->
+    <div class="type-row" id="brick-format-row">
+      <button class="type-btn" data-bfmt="find">패턴</button>
+      <button class="type-btn" data-bfmt="free">자유 기입</button>
+    </div>
+    <!-- 공통: 제목 -->
+    <div class="field-group">
+      <div class="field-label">제목</div>
+      <input class="field-input" id="brick-title" placeholder="제목을 입력해요" />
+    </div>
+    <!-- find 형식 -->
+    <div id="brick-fields-find">
+      <div class="field-group">
+        <div class="field-label">대상</div>
+        <input class="field-input" id="brick-find-subject" value="나는" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">조건</div>
+        <input class="field-input" id="brick-find-condition" placeholder="~할 때 / ~이면 ..."/>
+      </div>
+      <div class="field-group">
+        <div class="field-label">결과</div>
+        <div id="brick-result-blocks-wrap"></div>
+        <button class="add-result-btn" id="brick-add-result-btn">+ 결과 추가</button>
+      </div>
+      <div class="field-group">
+        <div class="field-label">태그</div>
+        <div class="tag-pool" id="brick-find-tag-pool"></div>
+        <div class="tag-add-row">
+          <input class="tag-add-input" id="brick-find-tag-input" placeholder="새 태그 입력..."/>
+          <button class="tag-add-btn" id="brick-find-tag-add-btn">+ 추가</button>
+        </div>
+      </div>
+    </div>
+    <!-- free 형식 -->
+    <div id="brick-fields-free" style="display:none;">
+      <div class="field-group">
+        <div class="field-label">내용</div>
+        <textarea class="field-textarea" id="brick-free-body" placeholder="자유롭게 적어요..." style="min-height:100px;"></textarea>
+      </div>
+    </div>
+    <div class="form-btns">
+      <button class="btn-cancel" id="brick-cancel">취소</button>
+      <button class="btn-save" id="brick-save">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 뼈대 작성 오버레이 -->
+<div class="overlay" id="bone-write-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="bone-sheet-title">뼈대 기록</div>
+    <div class="field-group">
+      <div class="field-label">규칙 (핵심 문장)</div>
+      <input class="field-input" id="bone-rule" placeholder="나는 ~할 때 ~한다 / ~이면 ~게 행동한다 ..." />
+    </div>
+    <!-- 참조 -->
+    <div class="field-group">
+      <div class="field-label">참조 <span class="field-opt">선택</span></div>
+      <div id="bone-refs-wrap" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+      <button class="add-result-btn" id="bone-add-ref-btn">+ 참조 추가</button>
+    </div>
+    <div class="form-btns">
+      <button class="btn-cancel" id="bone-cancel">취소</button>
+      <button class="btn-save" id="bone-save">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 참조 선택 오버레이 -->
+<div class="overlay" id="ref-picker-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">참조 추가</div>
+    <div class="type-row" id="ref-col-row" style="flex-wrap:wrap;gap:6px;">
+      <button class="type-btn" data-rcol="entries-try">시도</button>
+      <button class="type-btn" data-rcol="entries-find">패턴발견</button>
+      <button class="type-btn" data-rcol="entries-obs">관찰</button>
+      <button class="type-btn" data-rcol="bricks">벽돌</button>
+      <button class="type-btn" data-rcol="blueprints">청사진</button>
+    </div>
+    <input class="field-input" id="ref-search-input" placeholder="🔍 검색..." style="margin:10px 0 6px;"/>
+    <div id="ref-list" style="max-height:36vh;overflow-y:auto;margin-top:4px;"></div>
+    <div class="form-btns" style="margin-top:12px;">
+      <button class="btn-cancel" id="ref-picker-cancel">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 건축일지 상세 뷰 -->
+<div class="detail-view" id="builder-detail-view">
+  <div class="detail-inner">
+    <button class="back-btn" id="builder-back-btn">← 목록으로</button>
+    <div class="detail-badge" id="builder-detail-badge"></div>
+    <div class="detail-title" id="builder-detail-title"></div>
+    <div class="detail-date" id="builder-detail-date"></div>
+    <div class="detail-fields" id="builder-detail-fields"></div>
+    <div class="detail-actions" id="builder-detail-actions">
+      <button class="act-btn del" id="builder-detail-del">삭제</button>
+      <button class="act-btn" id="builder-detail-edit">수정</button>
+    </div>
+    <!-- 뼈대 전용: 상태 주기 -->
+    <div id="bone-status-section" style="display:none;margin-bottom:24px;">
+      <div class="comments-title">상태</div>
+      <div id="bone-status-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+    </div>
+    <!-- 뼈대 전용: 히스토리 -->
+    <div id="bone-history-section" style="display:none;margin-bottom:24px;">
+      <div class="comments-title">히스토리</div>
+      <div id="bone-history-list"></div>
+    </div>
+    <!-- 덧붙이기 -->
+    <div class="comments-section" id="builder-comments-section">
+      <div class="comments-title">덧붙이기</div>
+      <div id="builder-comments-list"></div>
+      <div class="comment-form">
+        <textarea class="comment-textarea" id="builder-comment-input" placeholder="덧붙이고 싶은 말을 적어요..."></textarea>
+        <button class="comment-submit" id="builder-comment-submit">추가</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /builder-space -->
+
+<!-- 상태 변경 메모 오버레이 (z-index 높여서 상세뷰 위에 표시) -->
+<div class="overlay" id="bone-status-overlay" style="z-index:500;">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="bone-status-sheet-title">상태 변경</div>
+    <div class="field-group">
+      <div class="field-label">날짜</div>
+      <input class="field-input" type="date" id="bone-status-date"/>
+    </div>
+    <div class="field-group">
+      <div class="field-label">메모 <span class="field-opt">선택</span></div>
+      <textarea class="field-textarea" id="bone-status-memo" placeholder="이 변화에 대해 적고 싶은 것..." style="min-height:80px;"></textarea>
+    </div>
+    <div class="form-btns">
+      <button class="btn-cancel" id="bone-status-cancel">메모 없이 변경</button>
+      <button class="btn-save" id="bone-status-confirm">확정</button>
     </div>
   </div>
 </div>
@@ -1115,7 +1471,7 @@ import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   collection, doc, query, orderBy,
   setDoc, addDoc, updateDoc, deleteDoc, getDocs,
-  onSnapshot, writeBatch, terminate, clearIndexedDbPersistence
+  onSnapshot, writeBatch, terminate, clearIndexedDbPersistence, increment
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -1147,7 +1503,7 @@ window.__fb = {
   signOut, onAuthStateChanged,
   collection, doc, query, orderBy,
   setDoc, addDoc, updateDoc, deleteDoc, getDocs,
-  onSnapshot, writeBatch, terminate, clearIndexedDbPersistence
+  onSnapshot, writeBatch, terminate, clearIndexedDbPersistence, increment
 };
 window.dispatchEvent(new Event('firebase-ready'));
 </script>
@@ -1196,6 +1552,38 @@ window.dispatchEvent(new Event('firebase-ready'));
   var unsubRetries = null;
   var unsubComments = null;
   var editingRetryId = null;
+
+  // ── 건축일지 상태 ──
+  var currentSpace = 'journal'; // 'journal' | 'builder'
+  var currentBuilderTab = 'all';
+  var blueprints = [];
+  var bricks = [];
+  var bones = [];
+  var unsubBlueprints = null;
+  var unsubBricks = null;
+  var unsubBones = null;
+  var unsubBuilderComments = null;
+  var unsubBoneHistory = null;
+  var viewingBuilderId = null;
+  var viewingBuilderType = null; // 'blueprint'|'brick'|'bone'
+  var editingBuilderId = null;
+  var editingBuilderType = null;
+
+  // 청사진 폼 상태
+  var selectedBlueprintKind = '열망';
+  var selectedBlueprintTags = [];
+
+  // 벽돌 폼 상태
+  var selectedBrickFormat = 'find';
+  var brickStrength = 1;
+  var brickResultBlocks = [{id:0, text:'', rtype:'기분'}];
+  var brickRbCounter = 1;
+  var selectedBrickTags = [];
+
+  // 뼈대 폼 상태
+  var boneRefs = []; // [{col,id,label}]
+  var pendingBoneStatusChange = null; // {boneId, newStatus}
+  var refPickerCallback = null;
 
   // ── 유틸 ──
   function pad(n){ return n < 10 ? '0'+n : ''+n; }
@@ -1509,13 +1897,14 @@ window.dispatchEvent(new Event('firebase-ready'));
 
   function doSignOut(){
     var fb = window.__fb;
-    stopSync();
+    stopSync(); stopBuilderSync();
     fb.signOut(fb.auth).then(function(){
       return fb.terminate(fb.db);
     }).then(function(){
       return fb.clearIndexedDbPersistence(fb.db);
     }).catch(function(e){ console.warn(e); }).finally(function(){
       localStorage.removeItem('journal_v2');
+      localStorage.removeItem('builder_v1');
       location.reload();
     });
   }
@@ -1645,7 +2034,7 @@ window.dispatchEvent(new Event('firebase-ready'));
     var entryRef = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId);
     try{
       await fb.addDoc(fb.collection(entryRef,'retries'), retryData);
-      await fb.updateDoc(entryRef, {retryCount: (entries.find(function(x){return x.id===entryId;})||{}).retries ? (entries.find(function(x){return x.id===entryId;})).retries.length : 0});
+      await fb.updateDoc(entryRef, {retryCount: fb.increment(1)});
     } catch(e){ showToast('저장 실패 😢'); console.error(e); }
   }
 
@@ -1658,8 +2047,12 @@ window.dispatchEvent(new Event('firebase-ready'));
 
   async function fbDeleteRetry(entryId, retryId){
     var fb = window.__fb;
-    var ref = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId+'/retries/'+retryId);
-    try{ await fb.deleteDoc(ref); }
+    var entryRef = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId);
+    var ref = fb.doc(entryRef,'retries/'+retryId);
+    try{
+      await fb.deleteDoc(ref);
+      await fb.updateDoc(entryRef, {retryCount: fb.increment(-1)});
+    }
     catch(e){ console.error(e); }
   }
 
@@ -1668,6 +2061,7 @@ window.dispatchEvent(new Event('firebase-ready'));
     var entryRef = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId);
     try{
       await fb.addDoc(fb.collection(entryRef,'comments'), commentData);
+      await fb.updateDoc(entryRef, {commentCount: fb.increment(1)});
     } catch(e){ showToast('저장 실패 😢'); console.error(e); }
   }
 
@@ -1680,8 +2074,12 @@ window.dispatchEvent(new Event('firebase-ready'));
 
   async function fbDeleteComment(entryId, commentId){
     var fb = window.__fb;
-    var ref = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId+'/comments/'+commentId);
-    try{ await fb.deleteDoc(ref); }
+    var entryRef = fb.doc(fb.db,'users/'+currentUid+'/entries/'+entryId);
+    var ref = fb.doc(entryRef,'comments/'+commentId);
+    try{
+      await fb.deleteDoc(ref);
+      await fb.updateDoc(entryRef, {commentCount: fb.increment(-1)});
+    }
     catch(e){ console.error(e); }
   }
 
@@ -2002,6 +2400,14 @@ window.dispatchEvent(new Event('firebase-ready'));
       renderComments(e);
     }
     document.getElementById('comment-input').value='';
+    // 벽돌로 복사 버튼 (패턴발견만)
+    var copyBrickBtn = document.getElementById('detail-copy-brick');
+    if(e.type==='find'){
+      copyBrickBtn.classList.remove('hidden');
+      copyBrickBtn.onclick = function(){ copyEntryToBrick(e); };
+    } else {
+      copyBrickBtn.classList.add('hidden');
+    }
     var dv=document.getElementById('detail-view');
     dv.style.display='block'; dv.classList.add('open');
     window.scrollTo(0,0);
@@ -2246,17 +2652,18 @@ window.dispatchEvent(new Event('firebase-ready'));
   document.getElementById('detail-del').addEventListener('click',function(){
     document.querySelector('.confirm-bar-msg').textContent='이 기록을 삭제할까요?';
     showConfirm(function(){
-      if(isLoggedIn){
-        stopDetailSync();
-        fbDeleteEntry(viewingId);
-      } else {
-        entries=entries.filter(function(x){return x.id!==viewingId;});
-        autoSave();
-      }
-      viewingId=null;
+      var delId = viewingId;
+      stopDetailSync();
+      entries = entries.filter(function(x){ return x.id !== delId; });
+      viewingId = null;
       var dv=document.getElementById('detail-view');
       dv.classList.remove('open'); dv.style.display='none';
       renderList();
+      if(isLoggedIn){
+        fbDeleteEntry(delId);
+      } else {
+        autoSave();
+      }
     });
   });
 
@@ -2968,6 +3375,1190 @@ window.dispatchEvent(new Event('firebase-ready'));
     }
   });
 
+  // ══════════════════ 건축일지 로직 ══════════════════
+
+  // ── 유틸 ──
+  var STATUS_LABELS = {draft:'초안', testing:'실험 중', stable:'안정됨', embedded:'삶에 스며듦', cracked:'균열'};
+  var STATUS_CHANGE_MSG = {draft:'초안으로 변경', testing:'실험 중으로 변경', stable:'안정됨으로 변경', embedded:'삶에 스며듦으로 변경', cracked:'균열 발생'};
+
+  function fmtDate(ts){
+    var d = new Date(ts);
+    return d.getFullYear()+'.'+pad(d.getMonth()+1)+'.'+pad(d.getDate());
+  }
+
+  // ── 비로그인 저장/불러오기 ──
+  function builderAutoSave(){
+    if(isLoggedIn) return;
+    try{ localStorage.setItem('builder_v1', JSON.stringify({blueprints:blueprints, bricks:bricks, bones:bones})); }catch(e){}
+  }
+  function builderAutoLoad(){
+    if(isLoggedIn) return;
+    try{
+      var raw = localStorage.getItem('builder_v1'); if(!raw) return;
+      var data = JSON.parse(raw);
+      if(data.blueprints) blueprints = data.blueprints;
+      if(data.bricks) bricks = data.bricks;
+      if(data.bones) bones = data.bones;
+    }catch(e){}
+  }
+
+  // ── 공간 전환 ──
+  function switchSpace(space){
+    currentSpace = space;
+    var js = document.getElementById('journal-space');
+    var bs = document.getElementById('builder-space');
+    var title = document.getElementById('app-title');
+    var sub = document.getElementById('app-sub');
+
+    if(space === 'builder'){
+      js.style.display = 'none';
+      bs.style.display = '';
+      title.textContent = '삶 건축 일지 🏠';
+      sub.innerHTML = '정제된 것들을 쌓는 공간 <span id="space-toggle-hint" style="color:var(--ink-faint);font-size:10px;">⇄ 발견일지</span>';
+      // 구독 교체
+      stopSync();
+      if(isLoggedIn) startBuilderSync(currentUid);
+      else { builderAutoLoad(); renderBuilderList(); }
+    } else {
+      js.style.display = '';
+      bs.style.display = 'none';
+      title.textContent = '나 발견 일지 ✍️';
+      sub.innerHTML = '나를 관찰하고 기록하는 공간 <span id="space-toggle-hint" style="color:var(--ink-faint);font-size:10px;">⇄ 건축일지</span>';
+      // 구독 교체
+      stopBuilderSync();
+      if(isLoggedIn) startSync(currentUid);
+      else { autoLoad(); renderList(); }
+    }
+  }
+
+  document.getElementById('space-toggle-area').addEventListener('click', function(){
+    switchSpace(currentSpace === 'journal' ? 'builder' : 'journal');
+  });
+
+  // ── Builder Firebase 동기화 ──
+  function startBuilderSync(uid){
+    var fb = window.__fb;
+    setSyncStatus('pending','동기화 중');
+
+    var q1 = fb.query(fb.collection(fb.db,'users/'+uid+'/blueprints'), fb.orderBy('createdAt','desc'));
+    unsubBlueprints = fb.onSnapshot(q1, function(snap){
+      blueprints = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      var hasPending = snap.metadata.hasPendingWrites;
+      setSyncStatus(hasPending ? 'pending' : 'synced', hasPending ? '저장 중' : '동기화됨');
+      renderBuilderList();
+    });
+
+    var q2 = fb.query(fb.collection(fb.db,'users/'+uid+'/bricks'), fb.orderBy('createdAt','desc'));
+    unsubBricks = fb.onSnapshot(q2, function(snap){
+      bricks = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      var hasPending = snap.metadata.hasPendingWrites;
+      setSyncStatus(hasPending ? 'pending' : 'synced', hasPending ? '저장 중' : '동기화됨');
+      renderBuilderList();
+    });
+
+    var q3 = fb.query(fb.collection(fb.db,'users/'+uid+'/bones'), fb.orderBy('createdAt','desc'));
+    unsubBones = fb.onSnapshot(q3, function(snap){
+      bones = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      var hasPending = snap.metadata.hasPendingWrites;
+      setSyncStatus(hasPending ? 'pending' : 'synced', hasPending ? '저장 중' : '동기화됨');
+      renderBuilderList();
+    });
+  }
+
+  function stopBuilderSync(){
+    if(unsubBlueprints){ unsubBlueprints(); unsubBlueprints = null; }
+    if(unsubBricks){ unsubBricks(); unsubBricks = null; }
+    if(unsubBones){ unsubBones(); unsubBones = null; }
+    stopBuilderDetailSync();
+  }
+
+  function stopBuilderDetailSync(){
+    if(unsubBuilderComments){ unsubBuilderComments(); unsubBuilderComments = null; }
+    if(unsubBoneHistory){ unsubBoneHistory(); unsubBoneHistory = null; }
+  }
+
+  function startBuilderDetailSync(uid, col, itemId){
+    stopBuilderDetailSync();
+    var fb = window.__fb;
+    var itemRef = fb.doc(fb.db, 'users/'+uid+'/'+col+'/'+itemId);
+
+    unsubBuilderComments = fb.onSnapshot(fb.collection(itemRef,'comments'), function(snap){
+      var item = getBuilderItem(col, itemId);
+      if(!item) return;
+      item.comments = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
+        .sort(function(a,b){ return a.createdAt-b.createdAt; });
+      renderBuilderComments(item);
+    });
+
+    if(col === 'bones'){
+      unsubBoneHistory = fb.onSnapshot(fb.query(fb.collection(itemRef,'history'), fb.orderBy('date','asc')), function(snap){
+        var item = getBuilderItem('bones', itemId);
+        if(!item) return;
+        item.history = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+        renderBoneHistory(item);
+      });
+    }
+  }
+
+  function getBuilderItem(col, id){
+    var arr = col==='blueprints' ? blueprints : col==='bricks' ? bricks : bones;
+    return arr.find(function(x){ return x.id===id; });
+  }
+
+  // ── Builder Firestore 쓰기 헬퍼 ──
+  async function fbSaveBlueprint(data){
+    var fb = window.__fb;
+    var ref = fb.doc(fb.collection(fb.db,'users/'+currentUid+'/blueprints'));
+    var item = Object.assign({id:ref.id}, data);
+    blueprints.unshift(item); renderBuilderList();
+    try{ await fb.setDoc(ref, data); }
+    catch(e){ blueprints = blueprints.filter(function(x){return x.id!==ref.id;}); renderBuilderList(); showToast('저장 실패 😢'); }
+  }
+  async function fbUpdateBlueprint(id, fields){
+    var fb = window.__fb;
+    try{ await fb.updateDoc(fb.doc(fb.db,'users/'+currentUid+'/blueprints/'+id), fields); }
+    catch(e){ showToast('수정 실패 😢'); }
+  }
+  async function fbDeleteBlueprint(id){
+    var fb = window.__fb;
+    var ref = fb.doc(fb.db,'users/'+currentUid+'/blueprints/'+id);
+    try{
+      var cs = await fb.getDocs(fb.collection(ref,'comments'));
+      var batch = fb.writeBatch(fb.db);
+      cs.forEach(function(d){ batch.delete(d.ref); });
+      batch.delete(ref); await batch.commit();
+    }catch(e){ showToast('삭제 실패 😢'); }
+  }
+
+  async function fbSaveBrick(data){
+    var fb = window.__fb;
+    var ref = fb.doc(fb.collection(fb.db,'users/'+currentUid+'/bricks'));
+    var item = Object.assign({id:ref.id}, data);
+    bricks.unshift(item); renderBuilderList();
+    try{ await fb.setDoc(ref, data); }
+    catch(e){ bricks = bricks.filter(function(x){return x.id!==ref.id;}); renderBuilderList(); showToast('저장 실패 😢'); }
+  }
+  async function fbUpdateBrick(id, fields){
+    var fb = window.__fb;
+    try{ await fb.updateDoc(fb.doc(fb.db,'users/'+currentUid+'/bricks/'+id), fields); }
+    catch(e){ showToast('수정 실패 😢'); }
+  }
+  async function fbDeleteBrick(id){
+    var fb = window.__fb;
+    var ref = fb.doc(fb.db,'users/'+currentUid+'/bricks/'+id);
+    try{
+      var cs = await fb.getDocs(fb.collection(ref,'comments'));
+      var batch = fb.writeBatch(fb.db);
+      cs.forEach(function(d){ batch.delete(d.ref); });
+      batch.delete(ref); await batch.commit();
+    }catch(e){ showToast('삭제 실패 😢'); }
+  }
+
+  async function fbSaveBone(data){
+    var fb = window.__fb;
+    var ref = fb.doc(fb.collection(fb.db,'users/'+currentUid+'/bones'));
+    var item = Object.assign({id:ref.id, history:[], comments:[]}, data);
+    bones.unshift(item); renderBuilderList();
+    try{
+      await fb.setDoc(ref, data);
+      // 생성됨 히스토리 자동 생성
+      var histData = {statusValue:'draft', body:'', date:data.createdAt, createdAt:data.createdAt, isGenesis:true};
+      await fb.addDoc(fb.collection(ref,'history'), histData);
+    }catch(e){ bones = bones.filter(function(x){return x.id!==ref.id;}); renderBuilderList(); showToast('저장 실패 😢'); }
+  }
+  async function fbUpdateBone(id, fields){
+    var fb = window.__fb;
+    try{ await fb.updateDoc(fb.doc(fb.db,'users/'+currentUid+'/bones/'+id), fields); }
+    catch(e){ showToast('수정 실패 😢'); }
+  }
+  async function fbDeleteBone(id){
+    var fb = window.__fb;
+    var ref = fb.doc(fb.db,'users/'+currentUid+'/bones/'+id);
+    try{
+      var hs = await fb.getDocs(fb.collection(ref,'history'));
+      var cs = await fb.getDocs(fb.collection(ref,'comments'));
+      var batch = fb.writeBatch(fb.db);
+      hs.forEach(function(d){ batch.delete(d.ref); });
+      cs.forEach(function(d){ batch.delete(d.ref); });
+      batch.delete(ref); await batch.commit();
+    }catch(e){ showToast('삭제 실패 😢'); }
+  }
+  async function fbAddBoneHistory(boneId, histData){
+    var fb = window.__fb;
+    var ref = fb.doc(fb.db,'users/'+currentUid+'/bones/'+boneId);
+    try{ await fb.addDoc(fb.collection(ref,'history'), histData); }
+    catch(e){ showToast('저장 실패 😢'); }
+  }
+  async function fbUpdateBoneHistory(boneId, histId, fields){
+    var fb = window.__fb;
+    try{ await fb.updateDoc(fb.doc(fb.db,'users/'+currentUid+'/bones/'+boneId+'/history/'+histId), fields); }
+    catch(e){ showToast('수정 실패 😢'); }
+  }
+  async function fbDeleteBoneHistory(boneId, histId){
+    var fb = window.__fb;
+    try{ await fb.deleteDoc(fb.doc(fb.db,'users/'+currentUid+'/bones/'+boneId+'/history/'+histId)); }
+    catch(e){ showToast('삭제 실패 😢'); }
+  }
+
+  // 건축일지 덧붙이기
+  async function fbAddBuilderComment(col, itemId, data){
+    var fb = window.__fb;
+    var ref = fb.doc(fb.db,'users/'+currentUid+'/'+col+'/'+itemId);
+    try{ await fb.addDoc(fb.collection(ref,'comments'), data); }
+    catch(e){ showToast('저장 실패 😢'); }
+  }
+  async function fbUpdateBuilderComment(col, itemId, cid, fields){
+    var fb = window.__fb;
+    try{ await fb.updateDoc(fb.doc(fb.db,'users/'+currentUid+'/'+col+'/'+itemId+'/comments/'+cid), fields); }
+    catch(e){}
+  }
+  async function fbDeleteBuilderComment(col, itemId, cid){
+    var fb = window.__fb;
+    try{ await fb.deleteDoc(fb.doc(fb.db,'users/'+currentUid+'/'+col+'/'+itemId+'/comments/'+cid)); }
+    catch(e){}
+  }
+
+  // ── 건축일지 목록 렌더 ──
+  function renderBuilderList(){
+    var wrap = document.getElementById('builder-list-wrap');
+    if(!wrap) return;
+
+    var items = [];
+    if(currentBuilderTab === 'all' || currentBuilderTab === 'blueprint'){
+      blueprints.forEach(function(b){ items.push(Object.assign({_col:'blueprints'}, b)); });
+    }
+    if(currentBuilderTab === 'all' || currentBuilderTab === 'brick'){
+      bricks.forEach(function(b){ items.push(Object.assign({_col:'bricks'}, b)); });
+    }
+    if(currentBuilderTab === 'all' || currentBuilderTab === 'bone'){
+      bones.forEach(function(b){ items.push(Object.assign({_col:'bones'}, b)); });
+    }
+
+    // 최신순 정렬
+    items.sort(function(a,b){ return b.createdAt - a.createdAt; });
+
+    if(items.length === 0){
+      wrap.innerHTML = '<div class="empty">아직 기록이 없어요</div>';
+      return;
+    }
+
+    wrap.innerHTML = items.map(function(item){
+      var col = item._col;
+      if(col === 'blueprints') return renderBlueprintCard(item);
+      if(col === 'bricks')     return renderBrickCard(item);
+      if(col === 'bones')      return renderBoneCard(item);
+      return '';
+    }).join('');
+
+    wrap.querySelectorAll('.card').forEach(function(card){
+      card.addEventListener('click', function(e){
+        // 벽돌 강도 라인 클릭 처리
+        if(e.target.classList.contains('brick-accent-bar')){
+          e.stopPropagation();
+          var id = card.dataset.id;
+          var brick = bricks.find(function(x){ return x.id===id; });
+          if(!brick) return;
+          brick.strength = (brick.strength || 1) % 4 + 1;
+          if(isLoggedIn) fbUpdateBrick(id, {strength: brick.strength});
+          else builderAutoSave();
+          renderBuilderList();
+          return;
+        }
+        openBuilderDetail(this.dataset.col, this.dataset.id);
+      });
+    });
+  }
+
+  function renderBlueprintCard(item){
+    var kindLabel = {열망:'열망 💫', 문제:'문제 🔍', 화두:'화두 💬'}[item.kind] || item.kind;
+    return '<div class="card" data-col="blueprints" data-id="'+esc(item.id)+'">'
+      +'<div class="card-accent acc-blueprint"></div>'
+      +'<div class="card-inner">'
+      +'<span class="card-badge badge-blueprint">청사진 · '+esc(kindLabel)+'</span>'
+      +'<div class="card-title" style="font-family:var(--card-title-font);font-size:var(--card-title-size);font-weight:var(--card-title-weight);">'+esc(item.body||'')+'</div>'
+      +'<div class="card-footer"><span class="card-date">'+fmtDate(item.createdAt)+'</span></div>'
+      +'</div></div>';
+  }
+
+  function renderBrickCard(item){
+    var s = item.strength||1;
+    var colors = {1:'#d4b8a0', 2:'#c09870', 3:'#a07050', 4:'#804030'};
+    var col = colors[s];
+    return '<div class="card" data-col="bricks" data-id="'+esc(item.id)+'" style="position:relative;">'
+      +'<div class="card-accent acc-brick brick-accent-bar" style="background:'+col+';cursor:pointer;" title="클릭해서 중요도 변경"></div>'
+      +'<div class="card-inner">'
+      +'<span class="card-badge badge-brick">벽돌 <span style="display:inline-block;width:7px;height:7px;border-radius:1px;background:'+col+';margin:0 2px 1px;vertical-align:middle;"></span> '+(item.format==='free'?'자유':'패턴')+'</span>'
+      +'<div class="card-title" style="font-family:var(--card-title-font);font-size:var(--card-title-size);font-weight:var(--card-title-weight);">'+esc(item.title||'')+'</div>'
+      +'<div class="card-footer"><span class="card-date">'+fmtDate(item.createdAt)+'</span></div>'
+      +'</div></div>';
+  }
+
+  function renderBoneCard(item){
+    var st = item.status||'draft';
+    var statusColors = {draft:'#aaa', testing:'#c8963a', stable:'#7a9a5a', embedded:'#4a7a4a', cracked:'#b05050'};
+    var col = statusColors[st]||'#aaa';
+    return '<div class="card" data-col="bones" data-id="'+esc(item.id)+'" style="position:relative;">'
+      +'<div class="card-accent" style="background:'+col+';"></div>'
+      +'<div class="card-inner">'
+      +'<span class="card-badge badge-bone">뼈대 <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+col+';margin:0 2px 1px;vertical-align:middle;"></span> '+esc(STATUS_LABELS[st]||st)+'</span>'
+      +'<div class="card-title" style="font-family:var(--card-title-font);font-size:var(--card-title-size);font-weight:var(--card-title-weight);">'+esc(item.rule||'')+'</div>'
+      +'<div class="card-footer"><span class="card-date">'+fmtDate(item.createdAt)+'</span></div>'
+      +'</div></div>';
+  }
+
+  // 건축일지 탭
+  document.querySelectorAll('[data-btab]').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      currentBuilderTab = this.getAttribute('data-btab');
+      document.querySelectorAll('[data-btab]').forEach(function(t){ t.classList.remove('active'); });
+      this.classList.add('active');
+      renderBuilderList();
+    });
+  });
+
+  // FAB
+  document.getElementById('builder-write-btn').addEventListener('click', function(){
+    if(currentBuilderTab === 'blueprint') openBlueprintSheet(null);
+    else if(currentBuilderTab === 'brick') openBrickSheet(null);
+    else if(currentBuilderTab === 'bone') openBoneSheet(null);
+    else openBlueprintSheet(null); // 전체 탭: 청사진 기본
+  });
+
+  // ══ 청사진 ══
+
+  function renderBlueprintTagPool(){
+    var pool = document.getElementById('blueprint-tag-pool'); if(!pool) return;
+    pool.innerHTML = tagPool.map(function(t){
+      var sel = selectedBlueprintTags.indexOf(t) >= 0;
+      return '<span class="tag-chip'+(sel?' selected':'')+'">'+esc(t)+'</span>';
+    }).join('');
+    pool.querySelectorAll('.tag-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        var t = this.textContent;
+        var idx = selectedBlueprintTags.indexOf(t);
+        if(idx >= 0) selectedBlueprintTags.splice(idx,1); else selectedBlueprintTags.push(t);
+        renderBlueprintTagPool();
+      });
+    });
+  }
+
+  function openBlueprintSheet(editItem){
+    editingBuilderId = editItem ? editItem.id : null;
+    editingBuilderType = 'blueprint';
+    document.getElementById('blueprint-sheet-title').textContent = editItem ? '청사진 수정' : '청사진 기록';
+
+    selectedBlueprintKind = editItem ? (editItem.kind||'열망') : '열망';
+    selectedBlueprintTags = editItem ? (editItem.tags||[]).slice() : [];
+    document.getElementById('blueprint-body').value = editItem ? (editItem.body||'') : '';
+
+    // 타입 버튼 상태
+    document.querySelectorAll('[data-kind]').forEach(function(btn){
+      btn.className = 'type-btn' + (btn.dataset.kind===selectedBlueprintKind ? ' sel-find' : '');
+    });
+    renderBlueprintTagPool();
+    document.getElementById('blueprint-write-overlay').classList.add('open');
+  }
+
+  document.querySelectorAll('[data-kind]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      selectedBlueprintKind = this.dataset.kind;
+      document.querySelectorAll('[data-kind]').forEach(function(b){ b.className='type-btn'; });
+      this.className = 'type-btn sel-find';
+    });
+  });
+
+  document.getElementById('blueprint-cancel').addEventListener('click', function(){
+    document.getElementById('blueprint-write-overlay').classList.remove('open');
+  });
+  document.getElementById('blueprint-write-overlay').addEventListener('click', function(e){
+    if(e.target===this) this.classList.remove('open');
+  });
+
+  document.getElementById('blueprint-tag-add-btn').addEventListener('click', function(){
+    var inp = document.getElementById('blueprint-tag-input');
+    var val = inp.value.trim(); if(!val) return;
+    if(tagPool.indexOf(val)<0) tagPool.push(val);
+    if(selectedBlueprintTags.indexOf(val)<0) selectedBlueprintTags.push(val);
+    inp.value = ''; renderBlueprintTagPool();
+    if(isLoggedIn) fbSaveMeta(); else autoSave();
+  });
+
+  document.getElementById('blueprint-save').addEventListener('click', function(){
+    var body = document.getElementById('blueprint-body').value.trim();
+    if(!body){ document.getElementById('blueprint-body').focus(); return; }
+    var data = {kind:selectedBlueprintKind, body:body, tags:selectedBlueprintTags.slice(), createdAt:Date.now()};
+    document.getElementById('blueprint-write-overlay').classList.remove('open');
+    if(editingBuilderId){
+      var item = blueprints.find(function(x){return x.id===editingBuilderId;});
+      if(item){ item.kind=data.kind; item.body=data.body; item.tags=data.tags; }
+      if(isLoggedIn) fbUpdateBlueprint(editingBuilderId, {kind:data.kind,body:data.body,tags:data.tags});
+      else builderAutoSave();
+      editingBuilderId=null; renderBuilderList();
+    } else {
+      if(isLoggedIn) fbSaveBlueprint(data);
+      else {
+        var id = 'b_'+(Date.now());
+        blueprints.unshift(Object.assign({id:id}, data));
+        renderBuilderList(); builderAutoSave();
+      }
+    }
+  });
+
+  // ══ 벽돌 ══
+
+  function setBrickFormat(fmt){
+    selectedBrickFormat = fmt;
+    document.querySelectorAll('[data-bfmt]').forEach(function(b){
+      b.className = 'type-btn' + (b.dataset.bfmt===fmt ? ' sel-find':'');
+    });
+    document.getElementById('brick-fields-find').style.display = fmt==='find' ? '' : 'none';
+    document.getElementById('brick-fields-free').style.display = fmt==='free' ? '' : 'none';
+  }
+
+  function setBrickStrength(s){
+    brickStrength = s;
+    document.querySelectorAll('.brick-str-dot').forEach(function(dot){
+      var ds = parseInt(dot.dataset.s);
+      dot.className = 'brick-str-dot' + (ds <= s ? ' active-'+ds : '');
+    });
+  }
+
+  function renderBrickResultBlocks(){
+    var wrap = document.getElementById('brick-result-blocks-wrap'); if(!wrap) return;
+    var html = '';
+    brickResultBlocks.forEach(function(rb, idx){
+      var rtypeBtns = RTYPES.map(function(rt){
+        return '<button class="rtype-btn'+(rb.rtype===rt?' sel':'')+'" data-rbid="'+rb.id+'" data-rtype="'+rt+'">'+rt+'</button>';
+      }).join('');
+      html += '<div class="result-block" data-rbid="'+rb.id+'">'
+        +(brickResultBlocks.length>1?'<button class="result-block-del" data-rbid="'+rb.id+'">✕</button>':'')
+        +'<div class="result-block-num">결과 '+(idx+1)+'</div>'
+        +'<input class="field-input rb-text" data-rbid="'+rb.id+'" value="'+esc(rb.text)+'" placeholder="행복해진다 / 무기력해진다 ..." style="margin-bottom:8px;"/>'
+        +'<div class="result-type-row">'+rtypeBtns+'</div>'
+        +'</div>';
+    });
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.rb-text').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var id = parseInt(this.getAttribute('data-rbid'));
+        var rb = brickResultBlocks.find(function(r){return r.id===id;});
+        if(rb) rb.text = this.value;
+      });
+    });
+    wrap.querySelectorAll('.rtype-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = parseInt(this.getAttribute('data-rbid'));
+        var rb = brickResultBlocks.find(function(r){return r.id===id;});
+        if(rb){ rb.rtype = this.getAttribute('data-rtype'); renderBrickResultBlocks(); }
+      });
+    });
+    wrap.querySelectorAll('.result-block-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = parseInt(this.getAttribute('data-rbid'));
+        brickResultBlocks = brickResultBlocks.filter(function(x){return x.id!==id;});
+        renderBrickResultBlocks();
+      });
+    });
+  }
+
+  function renderBrickFindTagPool(){
+    var pool = document.getElementById('brick-find-tag-pool'); if(!pool) return;
+    pool.innerHTML = tagPool.map(function(t){
+      return '<span class="tag-chip'+(selectedBrickTags.indexOf(t)>=0?' selected':'')+'">'+esc(t)+'</span>';
+    }).join('');
+    pool.querySelectorAll('.tag-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        var t = this.textContent;
+        var idx = selectedBrickTags.indexOf(t);
+        if(idx>=0) selectedBrickTags.splice(idx,1); else selectedBrickTags.push(t);
+        renderBrickFindTagPool();
+      });
+    });
+  }
+
+  function openBrickSheet(editItem){
+    editingBuilderId = editItem ? editItem.id : null;
+    editingBuilderType = 'brick';
+    document.getElementById('brick-sheet-title').textContent = editItem ? '벽돌 수정' : '벽돌 기록';
+
+    var fmt = editItem ? (editItem.format||'find') : 'find';
+    setBrickFormat(fmt);
+    setBrickStrength(editItem ? (editItem.strength||1) : 1);
+    document.getElementById('brick-title').value = editItem ? (editItem.title||'') : '';
+
+    if(editItem && fmt==='find' && editItem.data){
+      var d = editItem.data;
+      document.getElementById('brick-find-subject').value = d.subject||'나는';
+      document.getElementById('brick-find-condition').value = d.condition||'';
+      brickResultBlocks = (d.results||[{text:'',rtype:'기분'}]).map(function(r){return{id:brickRbCounter++,text:r.text,rtype:r.rtype||'기분'};});
+      selectedBrickTags = (d.tags||[]).slice();
+    } else if(editItem && fmt==='free'){
+      document.getElementById('brick-free-body').value = editItem.body||'';
+    } else {
+      document.getElementById('brick-find-subject').value = '나는';
+      document.getElementById('brick-find-condition').value = '';
+      brickResultBlocks = [{id:brickRbCounter++, text:'', rtype:'기분'}];
+      selectedBrickTags = [];
+      document.getElementById('brick-free-body').value = '';
+    }
+    renderBrickResultBlocks();
+    renderBrickFindTagPool();
+    document.getElementById('brick-write-overlay').classList.add('open');
+  }
+
+  document.querySelectorAll('[data-bfmt]').forEach(function(btn){
+    btn.addEventListener('click', function(){ setBrickFormat(this.dataset.bfmt); });
+  });
+
+  document.getElementById('brick-add-result-btn').addEventListener('click', function(){
+    brickResultBlocks.push({id:brickRbCounter++, text:'', rtype:'기분'});
+    renderBrickResultBlocks();
+  });
+
+  document.getElementById('brick-find-tag-add-btn').addEventListener('click', function(){
+    var inp = document.getElementById('brick-find-tag-input');
+    var val = inp.value.trim(); if(!val) return;
+    if(tagPool.indexOf(val)<0) tagPool.push(val);
+    if(selectedBrickTags.indexOf(val)<0) selectedBrickTags.push(val);
+    inp.value=''; renderBrickFindTagPool();
+    if(isLoggedIn) fbSaveMeta(); else autoSave();
+  });
+
+  document.getElementById('brick-cancel').addEventListener('click', function(){
+    document.getElementById('brick-write-overlay').classList.remove('open');
+  });
+  document.getElementById('brick-write-overlay').addEventListener('click', function(e){
+    if(e.target===this) this.classList.remove('open');
+  });
+
+  document.getElementById('brick-save').addEventListener('click', function(){
+    var title = document.getElementById('brick-title').value.trim();
+    if(!title){ document.getElementById('brick-title').focus(); return; }
+
+    var data;
+    if(selectedBrickFormat === 'find'){
+      data = {format:'find', title:title, strength:1, sourceEntryId:null,
+        data:{subject:document.getElementById('brick-find-subject').value,
+          condition:document.getElementById('brick-find-condition').value,
+          results:brickResultBlocks.map(function(r){return{text:r.text,rtype:r.rtype};}),
+          tags:selectedBrickTags.slice()},
+        createdAt:Date.now()};
+    } else {
+      data = {format:'free', title:title, strength:1, body:document.getElementById('brick-free-body').value, sourceEntryId:null, createdAt:Date.now()};
+    }
+
+    document.getElementById('brick-write-overlay').classList.remove('open');
+
+    if(editingBuilderId){
+      var item = bricks.find(function(x){return x.id===editingBuilderId;});
+      var keepStrength = item ? (item.strength||1) : 1;
+      if(item){ Object.assign(item, {format:data.format, title:data.title, data:data.data||null, body:data.body||null}); }
+      var updateFields = {format:data.format, title:data.title};
+      if(data.format === 'find'){
+        updateFields.data = data.data;
+        updateFields.body = null;
+      } else {
+        updateFields.body = data.body||'';
+        updateFields.data = null;
+      }
+      if(isLoggedIn) fbUpdateBrick(editingBuilderId, updateFields);
+      else builderAutoSave();
+      editingBuilderId=null; renderBuilderList();
+    } else {
+      if(isLoggedIn) fbSaveBrick(data);
+      else {
+        bricks.unshift(Object.assign({id:'br_'+Date.now()}, data));
+        renderBuilderList(); builderAutoSave();
+      }
+    }
+  });
+
+  // ══ 뼈대 ══
+
+  function renderBoneRefs(){
+    var wrap = document.getElementById('bone-refs-wrap'); if(!wrap) return;
+    wrap.innerHTML = boneRefs.map(function(ref, i){
+      return '<span class="ref-chip" style="cursor:default;">'
+        +'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">'+esc(ref.label)+'</span>'
+        +'<button class="ref-chip-del" data-i="'+i+'">×</button>'
+        +'</span>';
+    }).join('');
+    wrap.querySelectorAll('.ref-chip-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        boneRefs.splice(parseInt(this.dataset.i),1); renderBoneRefs();
+      });
+    });
+  }
+
+  function openBoneSheet(editItem){
+    editingBuilderId = editItem ? editItem.id : null;
+    editingBuilderType = 'bone';
+    document.getElementById('bone-sheet-title').textContent = editItem ? '뼈대 수정' : '뼈대 기록';
+    document.getElementById('bone-rule').value = editItem ? (editItem.rule||'') : '';
+    boneRefs = editItem ? (editItem.refs||[]).slice() : [];
+    renderBoneRefs();
+    document.getElementById('bone-write-overlay').classList.add('open');
+  }
+
+  document.getElementById('bone-cancel').addEventListener('click', function(){
+    document.getElementById('bone-write-overlay').classList.remove('open');
+  });
+  document.getElementById('bone-write-overlay').addEventListener('click', function(e){
+    if(e.target===this) this.classList.remove('open');
+  });
+
+  document.getElementById('bone-add-ref-btn').addEventListener('click', function(){
+    document.getElementById('bone-write-overlay').classList.remove('open');
+    openRefPicker(function(ref){
+      boneRefs.push(ref);
+      renderBoneRefs();
+      document.getElementById('bone-write-overlay').classList.add('open');
+    });
+  });
+
+  document.getElementById('bone-save').addEventListener('click', function(){
+    var rule = document.getElementById('bone-rule').value.trim();
+    if(!rule){ document.getElementById('bone-rule').focus(); return; }
+    var data = {rule:rule, status:'draft', refs:boneRefs.slice(), createdAt:Date.now()};
+    document.getElementById('bone-write-overlay').classList.remove('open');
+
+    if(editingBuilderId){
+      var savedId = editingBuilderId;
+      var item = bones.find(function(x){return x.id===savedId;});
+      if(item){ item.rule=data.rule; item.refs=data.refs; }
+      if(isLoggedIn) fbUpdateBone(savedId, {rule:data.rule, refs:data.refs});
+      else builderAutoSave();
+      editingBuilderId=null; renderBuilderList();
+      // 상세뷰 열려 있으면 갱신
+      if(viewingBuilderId===savedId) openBuilderDetail('bones', savedId);
+    } else {
+      if(isLoggedIn) fbSaveBone(data);
+      else {
+        var id = 'bo_'+Date.now();
+        var localItem = Object.assign({id:id}, data, {history:[{id:'g0',statusValue:'draft',body:'',date:data.createdAt,createdAt:data.createdAt,isGenesis:true}], comments:[]});
+        bones.unshift(localItem);
+        renderBuilderList(); builderAutoSave();
+      }
+    }
+  });
+
+  // ── 참조 피커 ──
+  function openRefPicker(callback){
+    refPickerCallback = callback;
+    currentRefCol = null;
+    document.querySelectorAll('[data-rcol]').forEach(function(b){ b.className='type-btn'; });
+    document.getElementById('ref-search-input').value = '';
+    document.getElementById('ref-list').innerHTML = '';
+    document.getElementById('ref-picker-overlay').classList.add('open');
+  }
+
+  document.querySelectorAll('[data-rcol]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('[data-rcol]').forEach(function(b){ b.className='type-btn'; });
+      this.className = 'type-btn sel-find';
+      document.getElementById('ref-search-input').value = '';
+      renderRefList(this.dataset.rcol, '');
+    });
+  });
+
+  var currentRefCol = null;
+
+  function renderRefList(rcol, searchQuery){
+    var list = document.getElementById('ref-list'); if(!list) return;
+    currentRefCol = rcol;
+    var items = [];
+    if(rcol==='entries-try')  items = entries.filter(function(e){return e.type==='try';});
+    else if(rcol==='entries-find') items = entries.filter(function(e){return e.type==='find';});
+    else if(rcol==='entries-obs')  items = entries.filter(function(e){return e.type==='obs';});
+    else if(rcol==='bricks')       items = bricks;
+    else if(rcol==='blueprints')   items = blueprints;
+
+    // 검색 필터
+    var q = (searchQuery||'').trim().toLowerCase();
+    if(q){
+      items = items.filter(function(item){
+        var label = (item.title||item.rule||item.body||'').toLowerCase();
+        return label.indexOf(q) >= 0;
+      });
+    }
+
+    if(items.length===0){
+      list.innerHTML='<div style="color:var(--ink-faint);font-size:13px;padding:12px;">'+(q?'검색 결과가 없어요':'항목이 없어요')+'</div>';
+      return;
+    }
+
+    // 청사진은 kind 배지 표시
+    list.innerHTML = items.map(function(item){
+      var label = item.title || item.rule || item.body || '';
+      var sub = '';
+      if(rcol==='blueprints') sub = '<span style="font-size:10px;color:var(--ink-faint);margin-right:4px;">'+esc(item.kind||'')+'</span>';
+      return '<div class="ref-list-item" data-id="'+esc(item.id)+'">'+sub+esc(label.slice(0,50))+'</div>';
+    }).join('');
+
+    list.querySelectorAll('.ref-list-item').forEach(function(el, i){
+      el.addEventListener('click', function(){
+        var item = items[i];
+        var col = rcol.startsWith('entries') ? 'entries' : rcol==='bricks' ? 'bricks' : 'blueprints';
+        var label = item.title || item.rule || item.body || '';
+        document.getElementById('ref-picker-overlay').classList.remove('open');
+        if(refPickerCallback) refPickerCallback({col:col, id:item.id, label:label.slice(0,50)});
+        refPickerCallback = null;
+      });
+    });
+  }
+
+  // 검색 입력 이벤트
+  document.getElementById('ref-search-input').addEventListener('input', function(){
+    if(currentRefCol) renderRefList(currentRefCol, this.value);
+  });
+
+  document.getElementById('ref-picker-cancel').addEventListener('click', function(){
+    document.getElementById('ref-picker-overlay').classList.remove('open');
+    refPickerCallback = null;
+  });
+  document.getElementById('ref-picker-overlay').addEventListener('click', function(e){
+    if(e.target===this){ this.classList.remove('open'); refPickerCallback=null; }
+  });
+
+  // ══ 건축일지 상세 뷰 ══
+
+  function openBuilderDetail(col, id){
+    var item = getBuilderItem(col, id);
+    if(!item) return;
+    viewingBuilderId = id;
+    viewingBuilderType = col;
+
+    var dv = document.getElementById('builder-detail-view');
+    var badge = document.getElementById('builder-detail-badge');
+    var titleEl = document.getElementById('builder-detail-title');
+    var dateEl = document.getElementById('builder-detail-date');
+    var fieldsEl = document.getElementById('builder-detail-fields');
+    var boneStatusSec = document.getElementById('bone-status-section');
+    var boneHistSec = document.getElementById('bone-history-section');
+    var commentsSec = document.getElementById('builder-comments-section');
+
+    // 배지 & 제목
+    if(col==='blueprints'){
+      badge.className = 'detail-badge badge-blueprint';
+      badge.textContent = '청사진 · '+(item.kind||'');
+      titleEl.textContent = item.body||'';
+    } else if(col==='bricks'){
+      badge.className = 'detail-badge badge-brick';
+      badge.textContent = '벽돌 · '+(item.format==='free'?'자유':'패턴');
+      titleEl.textContent = item.title||'';
+    } else {
+      badge.className = 'detail-badge badge-bone';
+      badge.innerHTML = '뼈대 <span class="bone-status-dot '+(item.status||'draft')+'"></span>'+(STATUS_LABELS[item.status||'draft']||'');
+      titleEl.textContent = item.rule||'';
+    }
+    titleEl.style.fontFamily = 'var(--detail-title-font)';
+    titleEl.style.fontSize = 'var(--detail-title-size)';
+    titleEl.style.fontWeight = 'var(--detail-title-weight)';
+    dateEl.textContent = fmtDate(item.createdAt);
+
+    // 필드 렌더
+    fieldsEl.innerHTML = '';
+    if(col==='blueprints'){
+      if(item.tags && item.tags.length>0){
+        fieldsEl.innerHTML = '<div class="dfield"><span class="dfield-label">태그</span><span class="dfield-val">'+item.tags.map(function(t){return '<span class="tag-chip selected" style="pointer-events:none;">'+esc(t)+'</span>';}).join('')+'</span></div>';
+      }
+    } else if(col==='bricks'){
+      if(item.format==='find' && item.data){
+        var d = item.data;
+        fieldsEl.innerHTML =
+          '<div class="dfield"><span class="dfield-label">대상</span><span class="dfield-val">'+esc(d.subject||'')+'</span></div>'
+          +'<div class="dfield"><span class="dfield-label">조건</span><span class="dfield-val">'+esc(d.condition||'')+'</span></div>'
+          +(d.results&&d.results.length?'<div class="dfield"><span class="dfield-label">결과</span>'
+            +d.results.map(function(r){return '<div style="margin-bottom:4px;"><span style="font-size:11px;color:var(--ink-light);">'+esc(r.rtype)+'</span><br>'+esc(r.text)+'</div>';}).join('')+'</div>':'')
+          +(d.tags&&d.tags.length?'<div class="dfield"><span class="dfield-label">태그</span><span class="dfield-val">'+d.tags.map(function(t){return '<span class="tag-chip selected" style="pointer-events:none;">'+esc(t)+'</span>';}).join('')+'</span></div>':'');
+      } else if(item.format==='free'){
+        fieldsEl.innerHTML = '<div class="dfield"><span class="dfield-val">'+esc(item.body||'')+'</span></div>';
+      }
+      // 출처
+      if(item.sourceEntryId){
+        var src = entries.find(function(e){return e.id===item.sourceEntryId;});
+        fieldsEl.innerHTML += '<div class="dfield"><span class="dfield-label">출처</span>'
+          +(src?'<span class="dfield-val" style="color:var(--c-brick);cursor:pointer;" id="brick-src-link">→ '+esc(src.title||'패턴발견')+'</span>'
+            :'<span class="dfield-val" style="color:var(--ink-faint);">(원본 삭제됨)</span>')
+          +'</div>';
+      }
+    } else { // bones
+      if(item.refs && item.refs.length>0){
+        var refsHtml = item.refs.map(function(ref){
+          var exists = checkRefExists(ref);
+          return '<span class="ref-chip'+(exists?'':' broken')+'" data-ref-col="'+esc(ref.col)+'" data-ref-id="'+esc(ref.id)+'">'
+            +'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(ref.label)+(exists?'':'  (삭제됨)')+'</span>'
+            +'</span>';
+        }).join('');
+        fieldsEl.innerHTML = '<div class="dfield"><span class="dfield-label">참조</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">'+refsHtml+'</div></div>';
+      }
+    }
+
+    // 뼈대 상태 칩
+    boneStatusSec.style.display = col==='bones' ? '' : 'none';
+    boneHistSec.style.display   = col==='bones' ? '' : 'none';
+    if(col==='bones') renderBoneStatusChips(item);
+
+    // 수정/삭제 버튼
+    document.getElementById('builder-detail-del').onclick = function(){
+      showBuilderConfirmDelete(col, id, item);
+    };
+    document.getElementById('builder-detail-edit').onclick = function(){
+      closeBuilderDetail();
+      if(col==='blueprints') openBlueprintSheet(item);
+      else if(col==='bricks') openBrickSheet(item);
+      else openBoneSheet(item);
+    };
+
+    // 덧붙이기
+    renderBuilderComments(item);
+
+    dv.classList.add('open');
+    dv.style.display = 'block';
+    history.pushState({builderDetail:id},'');
+
+    // Firebase 구독
+    if(isLoggedIn) startBuilderDetailSync(currentUid, col, id);
+    else {
+      // 비로그인: 로컬 데이터 렌더
+      if(col==='bones') renderBoneHistory(item);
+    }
+
+    // 참조 링크 클릭
+    setTimeout(function(){
+      var srcLink = document.getElementById('brick-src-link');
+      if(srcLink){
+        srcLink.addEventListener('click', function(){
+          var src = entries.find(function(e){return e.id===item.sourceEntryId;});
+          if(src){
+            closeBuilderDetail();
+            switchSpace('journal');
+            openDetail(src);
+          }
+        });
+      }
+      fieldsEl.querySelectorAll('.ref-chip:not(.broken)').forEach(function(chip){
+        chip.addEventListener('click', function(){
+          navigateToRef(chip.dataset.refCol, chip.dataset.refId);
+        });
+      });
+    }, 50);
+  }
+
+  function checkRefExists(ref){
+    var col = ref.col, id = ref.id;
+    if(col==='entries') return entries.some(function(e){return e.id===id;});
+    if(col==='bricks') return bricks.some(function(e){return e.id===id;});
+    if(col==='blueprints') return blueprints.some(function(e){return e.id===id;});
+    return false;
+  }
+
+  function navigateToRef(col, id){
+    if(col==='entries'){
+      closeBuilderDetail();
+      if(currentSpace !== 'journal') switchSpace('journal');
+      // entries가 이미 로드돼 있으면 바로, 아니면 잠깐 기다렸다 열기
+      var entry = entries.find(function(e){return e.id===id;});
+      if(entry){
+        openDetail(entry.id);
+      } else {
+        // Firebase 동기화 후 entries가 채워지면 열기 (최대 3초 대기)
+        var waited = 0;
+        var timer = setInterval(function(){
+          var e2 = entries.find(function(e){return e.id===id;});
+          if(e2){ clearInterval(timer); openDetail(e2.id); return; }
+          waited += 200;
+          if(waited >= 3000){ clearInterval(timer); showToast('항목을 찾을 수 없어요'); }
+        }, 200);
+      }
+    } else if(col==='bricks'){
+      var brick = bricks.find(function(e){return e.id===id;});
+      if(brick){ closeBuilderDetail(); openBuilderDetail('bricks', id); }
+    } else if(col==='blueprints'){
+      var bp = blueprints.find(function(e){return e.id===id;});
+      if(bp){ closeBuilderDetail(); openBuilderDetail('blueprints', id); }
+    }
+  }
+
+  function closeBuilderDetail(){
+    var dv = document.getElementById('builder-detail-view');
+    dv.classList.remove('open'); dv.style.display='none';
+    stopBuilderDetailSync();
+    viewingBuilderId = null; viewingBuilderType = null;
+  }
+
+  document.getElementById('builder-back-btn').addEventListener('click', function(){
+    closeBuilderDetail();
+  });
+
+  function showBuilderConfirmDelete(col, id, item){
+    document.querySelector('.confirm-bar-msg').textContent = '이 기록을 삭제할까요?';
+    showConfirm(function(){
+      closeBuilderDetail();
+      var arr = col==='blueprints' ? blueprints : col==='bricks' ? bricks : bones;
+      var idx = arr.findIndex(function(x){return x.id===id;});
+      if(idx>=0) arr.splice(idx,1);
+      renderBuilderList();
+      if(isLoggedIn){
+        if(col==='blueprints') fbDeleteBlueprint(id);
+        else if(col==='bricks') fbDeleteBrick(id);
+        else fbDeleteBone(id);
+      } else builderAutoSave();
+    });
+  }
+
+  // ── 뼈대 상태 ──
+  function renderBoneStatusChips(item){
+    var wrap = document.getElementById('bone-status-chips'); if(!wrap) return;
+    var stages = ['draft','testing','stable','embedded'];
+    var html = stages.map(function(s){
+      return '<button class="bone-status-chip'+(item.status===s?' sel':'')+'" data-s="'+s+'">'+STATUS_LABELS[s]+'</button>';
+    }).join('');
+    // cracked 별도
+    html += '<div style="flex-basis:100%;height:0;"></div>';
+    html += '<button class="bone-status-chip'+(item.status==='cracked'?' sel':'')+'" data-s="cracked" style="border-color:'+(item.status==='cracked'?'transparent':'#e0c0c0')+';color:'+(item.status==='cracked'?'':'#b05050')+';">⚠ '+STATUS_LABELS['cracked']+'</button>';
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll('.bone-status-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        var newStatus = this.dataset.s;
+        if(newStatus === item.status) return; // 같은 상태 무시
+        initiateBoneStatusChange(item, newStatus);
+      });
+    });
+  }
+
+  function initiateBoneStatusChange(item, newStatus){
+    // "메모를 작성하시겠습니까?" — confirm 대화상자로 처리
+    pendingBoneStatusChange = {boneId: item.id, newStatus: newStatus, item: item};
+    document.getElementById('bone-status-sheet-title').textContent = STATUS_LABELS[newStatus]+'로 변경';
+    var today = new Date();
+    document.getElementById('bone-status-date').value = today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+    document.getElementById('bone-status-memo').value = '';
+    document.getElementById('bone-status-overlay').classList.add('open');
+  }
+
+  document.getElementById('bone-status-cancel').addEventListener('click', function(){
+    // No 경로: 상태 변경 + 메모 없는 히스토리
+    if(!pendingBoneStatusChange) return;
+    document.getElementById('bone-status-overlay').classList.remove('open');
+    applyBoneStatusChange(pendingBoneStatusChange.item, pendingBoneStatusChange.newStatus, '', Date.now());
+    pendingBoneStatusChange = null;
+  });
+
+  document.getElementById('bone-status-confirm').addEventListener('click', function(){
+    // Yes 경로: 날짜 + 메모
+    if(!pendingBoneStatusChange) return;
+    document.getElementById('bone-status-overlay').classList.remove('open');
+    var dateStr = document.getElementById('bone-status-date').value;
+    var memo = document.getElementById('bone-status-memo').value.trim();
+    var dateTs = dateStr ? new Date(dateStr).getTime() : Date.now();
+    applyBoneStatusChange(pendingBoneStatusChange.item, pendingBoneStatusChange.newStatus, memo, dateTs);
+    pendingBoneStatusChange = null;
+  });
+
+  document.getElementById('bone-status-overlay').addEventListener('click', function(e){
+    if(e.target===this){
+      // 취소와 동일 (No 경로)
+      if(pendingBoneStatusChange){
+        this.classList.remove('open');
+        applyBoneStatusChange(pendingBoneStatusChange.item, pendingBoneStatusChange.newStatus, '', Date.now());
+        pendingBoneStatusChange = null;
+      }
+    }
+  });
+
+  function applyBoneStatusChange(item, newStatus, memo, dateTs){
+    // 낙관적 업데이트
+    item.status = newStatus;
+    var badge = document.getElementById('builder-detail-badge');
+    if(badge){ badge.innerHTML = '뼈대 <span class="bone-status-dot '+newStatus+'"></span>'+STATUS_LABELS[newStatus]; }
+    renderBoneStatusChips(item);
+    renderBuilderList();
+
+    var histData = {statusValue:newStatus, body:memo, date:dateTs, createdAt:Date.now(), isGenesis:false};
+
+    if(isLoggedIn){
+      fbUpdateBone(item.id, {status:newStatus});
+      fbAddBoneHistory(item.id, histData);
+    } else {
+      if(!item.history) item.history=[];
+      item.history.push(Object.assign({id:'h_'+Date.now()}, histData));
+      renderBoneHistory(item);
+      builderAutoSave();
+    }
+  }
+
+  // ── 히스토리 렌더 ──
+  function renderBoneHistory(item){
+    var wrap = document.getElementById('bone-history-list'); if(!wrap) return;
+    var hist = (item.history||[]).slice().sort(function(a,b){ if(a.isGenesis) return -1; if(b.isGenesis) return 1; return (a.date||a.createdAt)-(b.date||b.createdAt); });
+    if(!hist.length){ wrap.innerHTML='<div style="color:var(--ink-faint);font-size:13px;padding:8px 0;">히스토리 없음</div>'; return; }
+    wrap.innerHTML = hist.map(function(h){
+      var msg = h.isGenesis ? '규칙 생성됨' : (STATUS_CHANGE_MSG[h.statusValue]||h.statusValue);
+      var dateStr = fmtDate(h.date||h.createdAt);
+      return '<div class="bone-history-item" data-hid="'+esc(h.id)+'" data-status="'+esc(h.statusValue||'')+'" data-genesis="'+esc(String(!!h.isGenesis))+'">'
+        +'<div class="bone-history-main">'+esc(msg)+'</div>'
+        +'<div class="bone-history-date">'+esc(dateStr)+'</div>'
+        +(h.body?'<div class="bone-history-memo">'+esc(h.body)+'</div>':'')
+        +(!h.isGenesis?'<div class="bone-history-actions">'
+          +'<button class="comment-edit-btn hist-edit-btn">수정</button>'
+          +'<button class="comment-del hist-del-btn">삭제</button>'
+          +'</div>':'')
+        +'</div>';
+    }).join('');
+
+    // 수정/삭제 이벤트
+    wrap.querySelectorAll('.hist-del-btn').forEach(function(btn, i){
+      btn.addEventListener('click', function(){
+        var h = hist[i]; if(h.isGenesis) return;
+        if(isLoggedIn) fbDeleteBoneHistory(item.id, h.id);
+        else {
+          item.history = (item.history||[]).filter(function(x){return x.id!==h.id;});
+          renderBoneHistory(item); builderAutoSave();
+        }
+      });
+    });
+
+    wrap.querySelectorAll('.hist-edit-btn').forEach(function(btn, i){
+      btn.addEventListener('click', function(){
+        var h = hist[i]; if(h.isGenesis) return;
+        // 인라인 수정 폼
+        var item2 = getBuilderItem('bones', viewingBuilderId); if(!item2) return;
+        var el = btn.closest('.bone-history-item');
+        var mainEl = el.querySelector('.bone-history-main');
+        var memoEl = el.querySelector('.bone-history-memo');
+        var actionsEl = el.querySelector('.bone-history-actions');
+        var curDateStr = h.date ? (new Date(h.date)).toISOString().slice(0,10) : '';
+        el.insertAdjacentHTML('beforeend',
+          '<div class="comment-editing-form" id="hist-edit-form-'+esc(h.id)+'">'
+          +'<input type="date" class="field-input" style="margin-bottom:8px;" id="hist-edit-date-'+esc(h.id)+'" value="'+esc(curDateStr)+'">'
+          +'<textarea class="comment-editing-textarea" id="hist-edit-memo-'+esc(h.id)+'">'+esc(h.body||'')+'</textarea>'
+          +'<div class="comment-edit-btns">'
+          +'<button class="comment-edit-cancel hist-edit-cancel">취소</button>'
+          +'<button class="comment-edit-save hist-edit-save">저장</button>'
+          +'</div></div>');
+        mainEl.style.display='none'; if(memoEl) memoEl.style.display='none'; actionsEl.style.opacity='0';
+
+        el.querySelector('.hist-edit-cancel').addEventListener('click', function(){
+          el.querySelector('#hist-edit-form-'+h.id).remove();
+          mainEl.style.display=''; if(memoEl) memoEl.style.display=''; actionsEl.style.opacity='';
+        });
+        el.querySelector('.hist-edit-save').addEventListener('click', function(){
+          var newDate = new Date(el.querySelector('#hist-edit-date-'+h.id).value).getTime()||h.date;
+          var newMemo = el.querySelector('#hist-edit-memo-'+h.id).value.trim();
+          if(isLoggedIn) fbUpdateBoneHistory(item2.id, h.id, {body:newMemo, date:newDate});
+          else {
+            h.body=newMemo; h.date=newDate;
+            renderBoneHistory(item2); builderAutoSave();
+          }
+        });
+      });
+    });
+  }
+
+  // ── 건축일지 덧붙이기 ──
+  function renderBuilderComments(item){
+    var wrap = document.getElementById('builder-comments-list'); if(!wrap) return;
+    var comments = (item.comments||[]).slice().sort(function(a,b){return a.createdAt-b.createdAt;});
+    wrap.innerHTML = comments.map(function(c){
+      return '<div class="comment-item" data-cid="'+esc(c.id)+'">'
+        +'<div class="comment-date">'+fmt(c.createdAt)+'</div>'
+        +'<div class="comment-body">'+esc(c.body||'')+'</div>'
+        +'<div class="comment-actions">'
+        +'<button class="comment-edit-btn bcmt-edit">수정</button>'
+        +'<button class="comment-del bcmt-del">삭제</button>'
+        +'</div></div>';
+    }).join('');
+
+    wrap.querySelectorAll('.bcmt-del').forEach(function(btn, i){
+      btn.addEventListener('click', function(){
+        var c = comments[i];
+        if(isLoggedIn) fbDeleteBuilderComment(viewingBuilderType, viewingBuilderId, c.id);
+        else {
+          var it = getBuilderItem(viewingBuilderType, viewingBuilderId);
+          if(it){ it.comments=(it.comments||[]).filter(function(x){return x.id!==c.id;}); renderBuilderComments(it); builderAutoSave(); }
+        }
+      });
+    });
+
+    wrap.querySelectorAll('.bcmt-edit').forEach(function(btn, i){
+      btn.addEventListener('click', function(){
+        var c = comments[i];
+        var el = btn.closest('.comment-item');
+        var bodyEl = el.querySelector('.comment-body');
+        var actEl = el.querySelector('.comment-actions');
+        el.insertAdjacentHTML('beforeend',
+          '<div class="comment-editing-form">'
+          +'<textarea class="comment-editing-textarea">'+esc(c.body||'')+'</textarea>'
+          +'<div class="comment-edit-btns">'
+          +'<button class="comment-edit-cancel">취소</button>'
+          +'<button class="comment-edit-save">저장</button>'
+          +'</div></div>');
+        bodyEl.style.display='none'; actEl.style.opacity='0';
+        var form = el.querySelector('.comment-editing-form');
+        form.querySelector('.comment-edit-cancel').addEventListener('click', function(){ form.remove(); bodyEl.style.display=''; actEl.style.opacity=''; });
+        form.querySelector('.comment-edit-save').addEventListener('click', function(){
+          var newBody = form.querySelector('textarea').value.trim();
+          if(isLoggedIn) fbUpdateBuilderComment(viewingBuilderType, viewingBuilderId, c.id, {body:newBody});
+          else {
+            c.body = newBody;
+            var it = getBuilderItem(viewingBuilderType, viewingBuilderId);
+            if(it) renderBuilderComments(it);
+            builderAutoSave();
+          }
+          form.remove(); bodyEl.style.display=''; actEl.style.opacity='';
+        });
+      });
+    });
+  }
+
+  document.getElementById('builder-comment-submit').addEventListener('click', function(){
+    var inp = document.getElementById('builder-comment-input');
+    var body = inp.value.trim(); if(!body || !viewingBuilderId) return;
+    var data = {body:body, createdAt:Date.now()};
+    inp.value = '';
+    var item = getBuilderItem(viewingBuilderType, viewingBuilderId);
+    if(isLoggedIn){
+      fbAddBuilderComment(viewingBuilderType, viewingBuilderId, data);
+    } else {
+      if(item){
+        if(!item.comments) item.comments=[];
+        item.comments.push(Object.assign({id:'c_'+Date.now()}, data));
+        renderBuilderComments(item); builderAutoSave();
+      }
+    }
+  });
+
+  // ── "벽돌로 복사" (발견일지 패턴발견 상세에서) ──
+  function copyEntryToBrick(entry){
+    var d = entry.data||{};
+    var data = {
+      format:'find',
+      title: entry.title||'',
+      strength: 1,
+      sourceEntryId: entry.id,
+      data: {
+        subject: d.subject||'나는',
+        condition: d.condition||'',
+        results: (d.results||[]).slice(),
+        tags: (d.tags||[]).slice()
+      },
+      createdAt: Date.now()
+    };
+    if(isLoggedIn) fbSaveBrick(data);
+    else {
+      bricks.unshift(Object.assign({id:'br_'+Date.now()}, data));
+      builderAutoSave();
+    }
+    showToast('벽돌로 복사했어요 🧱');
+  }
+
+  // ── popstate 처리 (건축일지 상세 뷰) ──
+  // (기존 popstate 핸들러와 함께 처리됨 — init() 쪽)
+
+  // ══════════════════════════════════════════════════
+
   // ── 초기화 ──
   function init(){
     var fb = window.__fb;
@@ -2991,23 +4582,24 @@ window.dispatchEvent(new Event('firebase-ready'));
         updateAuthUI(user);
         // 마이그레이션 확인 후 동기화 시작
         doMigration(user.uid).then(function(){
-          startSync(user.uid);
+          if(currentSpace==='journal') startSync(user.uid);
+          else startBuilderSync(user.uid);
         });
       } else {
         isLoggedIn=false;
         currentUid=null;
-        stopSync();
+        stopSync(); stopBuilderSync();
         updateAuthUI(null);
         setSyncStatus('offline','');
         // 비로그인: 로컬 로드
-        autoLoad();
+        autoLoad(); builderAutoLoad();
         applyFontSettings();
-        renderList();
+        renderList(); renderBuilderList();
       }
     });
 
     // 비로그인 초기 렌더 (firebase 응답 전까지)
-    autoLoad();
+    autoLoad(); builderAutoLoad();
     applyFontSettings();
     bindPreview();
     renderTryMidFields();
@@ -3021,7 +4613,13 @@ window.dispatchEvent(new Event('firebase-ready'));
 
     window.addEventListener('popstate',function(e){
       var dv=document.getElementById('detail-view');
-      if(dv.classList.contains('open')){
+      var bdv=document.getElementById('builder-detail-view');
+      if(bdv.classList.contains('open')){
+        stopBuilderDetailSync();
+        bdv.classList.remove('open');
+        bdv.style.display='none';
+        viewingBuilderId=null; viewingBuilderType=null;
+      } else if(dv.classList.contains('open')){
         stopDetailSync();
         dv.classList.remove('open');
         dv.style.display='none';
