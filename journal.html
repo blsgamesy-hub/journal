@@ -1196,6 +1196,7 @@ body {
     <div class="sheet-title" id="blueprint-sheet-title">청사진 기록</div>
     <div class="type-row" id="blueprint-kind-row">
       <button class="type-btn" data-kind="열망">열망</button>
+      <button class="type-btn" data-kind="목표">목표</button>
       <button class="type-btn" data-kind="문제">문제</button>
       <button class="type-btn" data-kind="화두">화두</button>
     </div>
@@ -3670,7 +3671,7 @@ window.dispatchEvent(new Event('firebase-ready'));
   }
 
   function renderBlueprintCard(item){
-    var kindLabel = {열망:'열망 💫', 문제:'문제 🔍', 화두:'화두 💬'}[item.kind] || item.kind;
+    var kindLabel = {열망:'열망 💫', 목표:'목표 🎯', 문제:'문제 🔍', 화두:'화두 💬'}[item.kind] || item.kind;
     return '<div class="card" data-col="blueprints" data-id="'+esc(item.id)+'">'
       +'<div class="card-accent acc-blueprint"></div>'
       +'<div class="card-inner">'
@@ -3842,7 +3843,7 @@ window.dispatchEvent(new Event('firebase-ready'));
       inp.addEventListener('input', function(){
         var id = parseInt(this.getAttribute('data-rbid'));
         var rb = brickResultBlocks.find(function(r){return r.id===id;});
-        if(rb) rb.text = this.value;
+        if(rb) { rb.text = this.value; updateBrickPreview(); }
       });
     });
     wrap.querySelectorAll('.rtype-btn').forEach(function(btn){
@@ -3885,6 +3886,7 @@ window.dispatchEvent(new Event('firebase-ready'));
     setBrickFormat(fmt);
     setBrickStrength(editItem ? (editItem.strength||1) : 1);
     document.getElementById('brick-title').value = editItem ? (editItem.title||'') : '';
+    document.getElementById('brick-title').dataset.userEdited = editItem ? 'true' : '';
 
     if(editItem && fmt==='find' && editItem.data){
       var d = editItem.data;
@@ -3906,8 +3908,29 @@ window.dispatchEvent(new Event('firebase-ready'));
     document.getElementById('brick-write-overlay').classList.add('open');
   }
 
+  // 벽돌 패턴 탭 제목 자동완성
+  function updateBrickPreview(){
+    var titleEl = document.getElementById('brick-title');
+    if(!titleEl || titleEl.dataset.userEdited === 'true') return;
+    var subject = (document.getElementById('brick-find-subject')||{}).value||'';
+    var condition = (document.getElementById('brick-find-condition')||{}).value||'';
+    var rbTexts = brickResultBlocks.map(function(r){return r.text.trim();}).filter(Boolean).join(', ');
+    var parts = [subject.trim(), condition.trim(), rbTexts].filter(Boolean);
+    if(parts.length) titleEl.value = parts.join(' ');
+  }
+
   document.querySelectorAll('[data-bfmt]').forEach(function(btn){
     btn.addEventListener('click', function(){ setBrickFormat(this.dataset.bfmt); });
+  });
+
+  // 제목 자동완성 트리거 (패턴 탭 입력 필드)
+  ;['brick-find-subject','brick-find-condition'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener('input', updateBrickPreview);
+  });
+  // 제목을 직접 수정하면 자동완성 비활성화
+  document.getElementById('brick-title').addEventListener('input', function(){
+    this.dataset.userEdited = this.value ? 'true' : '';
   });
 
   document.getElementById('brick-add-result-btn').addEventListener('click', function(){
@@ -4392,7 +4415,12 @@ window.dispatchEvent(new Event('firebase-ready'));
   // ── 히스토리 렌더 ──
   function renderBoneHistory(item){
     var wrap = document.getElementById('bone-history-list'); if(!wrap) return;
-    var hist = (item.history||[]).slice().sort(function(a,b){ if(a.isGenesis) return -1; if(b.isGenesis) return 1; return (a.date||a.createdAt)-(b.date||b.createdAt); });
+    var hist = (item.history||[]).slice().sort(function(a,b){
+      if(a.isGenesis && b.isGenesis) return 0;
+      if(a.isGenesis) return -1;
+      if(b.isGenesis) return 1;
+      return (a.date||a.createdAt)-(b.date||b.createdAt);
+    });
     if(!hist.length){ wrap.innerHTML='<div style="color:var(--ink-faint);font-size:13px;padding:8px 0;">히스토리 없음</div>'; return; }
     wrap.innerHTML = hist.map(function(h){
       var msg = h.isGenesis ? '규칙 생성됨' : (STATUS_CHANGE_MSG[h.statusValue]||h.statusValue);
@@ -4408,10 +4436,12 @@ window.dispatchEvent(new Event('firebase-ready'));
         +'</div>';
     }).join('');
 
-    // 수정/삭제 이벤트
-    wrap.querySelectorAll('.hist-del-btn').forEach(function(btn, i){
+    // 수정/삭제 이벤트 — data-hid로 식별 (인덱스 버그 수정)
+    wrap.querySelectorAll('.hist-del-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
-        var h = hist[i]; if(h.isGenesis) return;
+        var hid = btn.closest('[data-hid]').getAttribute('data-hid');
+        var h = hist.find(function(x){ return x.id===hid; });
+        if(!h || h.isGenesis) return;
         if(isLoggedIn) fbDeleteBoneHistory(item.id, h.id);
         else {
           item.history = (item.history||[]).filter(function(x){return x.id!==h.id;});
@@ -4420,12 +4450,15 @@ window.dispatchEvent(new Event('firebase-ready'));
       });
     });
 
-    wrap.querySelectorAll('.hist-edit-btn').forEach(function(btn, i){
+    wrap.querySelectorAll('.hist-edit-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
-        var h = hist[i]; if(h.isGenesis) return;
-        // 인라인 수정 폼
+        var hid = btn.closest('[data-hid]').getAttribute('data-hid');
+        var h = hist.find(function(x){ return x.id===hid; });
+        if(!h || h.isGenesis) return;
         var item2 = getBuilderItem('bones', viewingBuilderId); if(!item2) return;
         var el = btn.closest('.bone-history-item');
+        // 이미 수정 폼 열려있으면 무시
+        if(el.querySelector('.comment-editing-form')) return;
         var mainEl = el.querySelector('.bone-history-main');
         var memoEl = el.querySelector('.bone-history-memo');
         var actionsEl = el.querySelector('.bone-history-actions');
@@ -4439,19 +4472,17 @@ window.dispatchEvent(new Event('firebase-ready'));
           +'<button class="comment-edit-save hist-edit-save">저장</button>'
           +'</div></div>');
         mainEl.style.display='none'; if(memoEl) memoEl.style.display='none'; actionsEl.style.opacity='0';
-
         el.querySelector('.hist-edit-cancel').addEventListener('click', function(){
-          el.querySelector('#hist-edit-form-'+h.id).remove();
+          var form = el.querySelector('.comment-editing-form');
+          if(form) form.remove();
           mainEl.style.display=''; if(memoEl) memoEl.style.display=''; actionsEl.style.opacity='';
         });
         el.querySelector('.hist-edit-save').addEventListener('click', function(){
-          var newDate = new Date(el.querySelector('#hist-edit-date-'+h.id).value).getTime()||h.date;
+          var dateInput = el.querySelector('#hist-edit-date-'+h.id);
+          var newDate = dateInput && dateInput.value ? new Date(dateInput.value).getTime() : (h.date||h.createdAt);
           var newMemo = el.querySelector('#hist-edit-memo-'+h.id).value.trim();
           if(isLoggedIn) fbUpdateBoneHistory(item2.id, h.id, {body:newMemo, date:newDate});
-          else {
-            h.body=newMemo; h.date=newDate;
-            renderBoneHistory(item2); builderAutoSave();
-          }
+          else { h.body=newMemo; h.date=newDate; renderBoneHistory(item2); builderAutoSave(); }
         });
       });
     });
