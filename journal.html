@@ -1465,7 +1465,7 @@ body {
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
 import {
   getAuth, GoogleAuthProvider,
-  signInWithPopup, signInWithRedirect, getRedirectResult,
+  signInWithPopup,
   signOut, onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import {
@@ -1500,7 +1500,7 @@ try {
 
 window.__fb = {
   auth, db,
-  GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+  GoogleAuthProvider, signInWithPopup,
   signOut, onAuthStateChanged,
   collection, doc, query, orderBy,
   setDoc, addDoc, updateDoc, deleteDoc, getDocs,
@@ -1867,25 +1867,14 @@ window.dispatchEvent(new Event('firebase-ready'));
   function doSignIn(){
     var fb = window.__fb;
     var provider = new fb.GoogleAuthProvider();
-    if(isStandalonePWA()){
-      fb.signInWithRedirect(fb.auth, provider).catch(function(e){
-        if(e.code === 'auth/unauthorized-domain'){
-          showToast('이 기기에서는 로그인할 수 없어요');
-        } else {
-          showToast('로그인 실패: ' + e.code);
-        }
-        console.error(e);
-      });
-    } else {
-      fb.signInWithPopup(fb.auth, provider).catch(function(e){
-        if(e.code === 'auth/unauthorized-domain'){
-          showToast('이 기기에서는 로그인할 수 없어요');
-        } else if(e.code !== 'auth/popup-closed-by-user'){
-          showToast('로그인 실패: ' + e.code);
-        }
-        console.error(e);
-      });
-    }
+    fb.signInWithPopup(fb.auth, provider).catch(function(e){
+      if(e.code === 'auth/unauthorized-domain'){
+        showToast('이 기기에서는 로그인할 수 없어요');
+      } else if(e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request'){
+        showToast('로그인 실패: ' + e.code);
+      }
+      console.error(e);
+    });
   }
 
   function showConfirmSignOut(){
@@ -4593,17 +4582,6 @@ window.dispatchEvent(new Event('firebase-ready'));
   // ── 초기화 ──
   function init(){
     var fb = window.__fb;
-
-    // 리다이렉트 결과 처리 (iOS PWA 로그인 복귀)
-    fb.getRedirectResult(fb.auth).then(function(result){
-      // 리다이렉트로 돌아온 케이스 — onAuthStateChanged에서 처리됨
-    }).catch(function(e){
-      if(e.code==='auth/unauthorized-domain'){
-        showToast('이 기기에서는 로그인할 수 없어요');
-      } else if(e.code && e.code!=='auth/null-user'){
-        console.error('redirect result error:', e);
-      }
-    });
 
     // 인증 상태 감시
     fb.onAuthStateChanged(fb.auth, function(user){
